@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <RootNamespace>IczpNet.Chat.Admin</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>IczpNet</Authors>
+    <RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Iczp/Chat.git</PackageProjectUrl>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" Version="10.6.1" />
+    <PackageReference Include="Volo.Abp.Authorization" Version="10.6.1" />
+    <ProjectReference Include="..\IczpNet.Chat.Domain.Shared\IczpNet.Chat.Domain.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
+    <PackageReference Update="Fody" Version="6.9.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

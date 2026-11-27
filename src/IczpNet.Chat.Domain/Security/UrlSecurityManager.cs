@@ -7,7 +7,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -16,7 +20,8 @@ namespace IczpNet.Chat.Security;
 /// <summary>
 /// URL 安全风控与违规举报领域服务实现
 /// </summary>
-public class UrlSecurityManager : DomainService, IUrlSecurityManager
+[ExposeServices(typeof(UrlSecurityManager), typeof(IUrlSecurityManager), typeof(IUrlSecurityAdminManager))]
+public class UrlSecurityManager : DomainService, IUrlSecurityAdminManager
 {
     private readonly IRepository<UrlSecurityRule, Guid> _ruleRepository;
     private readonly IRepository<SecurityReport, Guid> _reportRepository;
@@ -271,5 +276,287 @@ public class UrlSecurityManager : DomainService, IUrlSecurityManager
         using var md5 = MD5.Create();
         var bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes).ToLower();
+    }
+
+    public virtual async Task<UrlSecurityRuleAdminListResult> GetRulesAdminListAsync(
+        string keyword = null,
+        UrlSecurityLevel? level = null,
+        UrlRiskCategory? category = null,
+        bool? isEnabled = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = (await _ruleRepository.GetQueryableAsync())
+            .WhereIf(!string.IsNullOrWhiteSpace(keyword), x =>
+                x.Host.Contains(keyword.Trim().ToLowerInvariant()) ||
+                (x.Reason != null && x.Reason.Contains(keyword.Trim())))
+            .WhereIf(level.HasValue, x => x.Level == level.Value)
+            .WhereIf(category.HasValue, x => x.Category == category.Value)
+            .WhereIf(isEnabled.HasValue, x => x.IsEnabled == isEnabled.Value);
+
+        var totalCount = await AsyncExecuter.LongCountAsync(queryable, cancellationToken);
+        if (totalCount == 0)
+        {
+            return new UrlSecurityRuleAdminListResult();
+        }
+
+        queryable = ApplyRuleSorting(queryable, sorting);
+
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .Skip(Math.Max(0, skipCount))
+                .Take(Math.Clamp(maxResultCount, 1, 200)),
+            cancellationToken);
+
+        return new UrlSecurityRuleAdminListResult
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
+    }
+
+    public virtual async Task<UrlSecurityRule> GetRuleAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _ruleRepository.FindAsync(id, cancellationToken: cancellationToken);
+        return entity ?? throw new EntityNotFoundException(typeof(UrlSecurityRule), id);
+    }
+
+    public virtual async Task<UrlSecurityRule> CreateRuleAdminAsync(
+        string host,
+        UrlSecurityLevel level,
+        UrlRiskCategory category,
+        string reason,
+        bool isEnabled,
+        DateTime? expireTime,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedHost = host?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedHost))
+        {
+            throw new BusinessException("ChatAdmin:UrlSecurityHostRequired", "域名模式不能为空。");
+        }
+
+        if (await _ruleRepository.AnyAsync(x => x.Host == normalizedHost, cancellationToken))
+        {
+            throw new BusinessException("ChatAdmin:DuplicateUrlSecurityHost", $"域名规则 [{normalizedHost}] 已存在。");
+        }
+
+        var rule = new UrlSecurityRule(GuidGenerator.Create(), normalizedHost, level, category, reason)
+        {
+            IsEnabled = isEnabled,
+            ExpireTime = expireTime
+        };
+
+        await _ruleRepository.InsertAsync(rule, autoSave: true, cancellationToken: cancellationToken);
+        await RefreshCacheAsync();
+        return rule;
+    }
+
+    public virtual async Task<UrlSecurityRule> UpdateRuleAdminAsync(
+        Guid id,
+        string host,
+        UrlSecurityLevel level,
+        UrlRiskCategory category,
+        string reason,
+        bool isEnabled,
+        DateTime? expireTime,
+        CancellationToken cancellationToken = default)
+    {
+        var rule = await _ruleRepository.GetAsync(id, cancellationToken: cancellationToken);
+        var normalizedHost = host?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedHost))
+        {
+            throw new BusinessException("ChatAdmin:UrlSecurityHostRequired", "域名模式不能为空。");
+        }
+
+        if (await _ruleRepository.AnyAsync(x => x.Id != id && x.Host == normalizedHost, cancellationToken))
+        {
+            throw new BusinessException("ChatAdmin:DuplicateUrlSecurityHost", $"域名规则 [{normalizedHost}] 已存在。");
+        }
+
+        rule.Host = normalizedHost;
+        rule.Level = level;
+        rule.Category = category;
+        rule.Reason = reason;
+        rule.IsEnabled = isEnabled;
+        rule.ExpireTime = expireTime;
+
+        await _ruleRepository.UpdateAsync(rule, autoSave: true, cancellationToken: cancellationToken);
+        await RefreshCacheAsync();
+        return rule;
+    }
+
+    public virtual async Task<UrlSecurityRule> SetRuleEnabledAdminAsync(
+        Guid id,
+        bool isEnabled,
+        CancellationToken cancellationToken = default)
+    {
+        var rule = await _ruleRepository.GetAsync(id, cancellationToken: cancellationToken);
+        rule.IsEnabled = isEnabled;
+        await _ruleRepository.UpdateAsync(rule, autoSave: true, cancellationToken: cancellationToken);
+        await RefreshCacheAsync();
+        return rule;
+    }
+
+    public virtual async Task DeleteRuleAdminAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var rule = await _ruleRepository.FindAsync(id, cancellationToken: cancellationToken)
+            ?? throw new EntityNotFoundException(typeof(UrlSecurityRule), id);
+
+        await _ruleRepository.DeleteAsync(rule, autoSave: true, cancellationToken: cancellationToken);
+        await RefreshCacheAsync();
+    }
+
+    public virtual async Task<SecurityReportAdminListResult> GetReportsAdminListAsync(
+        string keyword = null,
+        int? status = null,
+        string targetType = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = (await _reportRepository.GetQueryableAsync())
+            .WhereIf(!string.IsNullOrWhiteSpace(keyword), x =>
+                x.TargetContent.Contains(keyword.Trim()) ||
+                x.Reason.Contains(keyword.Trim()) ||
+                (x.Description != null && x.Description.Contains(keyword.Trim())))
+            .WhereIf(status.HasValue, x => x.Status == status.Value)
+            .WhereIf(!string.IsNullOrWhiteSpace(targetType), x => x.TargetType == targetType.Trim());
+
+        var totalCount = await AsyncExecuter.LongCountAsync(queryable, cancellationToken);
+        if (totalCount == 0)
+        {
+            return new SecurityReportAdminListResult();
+        }
+
+        queryable = ApplyReportSorting(queryable, sorting);
+
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .Skip(Math.Max(0, skipCount))
+                .Take(Math.Clamp(maxResultCount, 1, 200)),
+            cancellationToken);
+
+        return new SecurityReportAdminListResult
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
+    }
+
+    public virtual async Task<SecurityReport> GetReportAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _reportRepository.FindAsync(id, cancellationToken: cancellationToken);
+        return entity ?? throw new EntityNotFoundException(typeof(SecurityReport), id);
+    }
+
+    public virtual async Task<SecurityReport> HandleReportAdminAsync(
+        Guid id,
+        int status,
+        string auditRemark,
+        bool addBlacklist,
+        CancellationToken cancellationToken = default)
+    {
+        if (status is not (1 or 2))
+        {
+            throw new BusinessException("ChatAdmin:InvalidSecurityReportStatus", "处理状态必须为已确认或已驳回。");
+        }
+
+        var report = await _reportRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (report.Status != 0)
+        {
+            throw new BusinessException("ChatAdmin:SecurityReportAlreadyHandled", "该举报工单已处理，不可重复审核。");
+        }
+
+        report.Status = status;
+        report.AuditRemark = auditRemark;
+        await _reportRepository.UpdateAsync(report, autoSave: true, cancellationToken: cancellationToken);
+
+        if (status == 1 && addBlacklist && !string.IsNullOrWhiteSpace(report.TargetContent))
+        {
+            var host = Uri.TryCreate(report.TargetContent.Trim(), UriKind.Absolute, out var uri)
+                ? uri.Host.ToLowerInvariant()
+                : report.TargetContent.Trim().ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(host) && host.Length <= 256)
+            {
+                var existingRule = await _ruleRepository.FindAsync(x => x.Host == host, cancellationToken: cancellationToken);
+                if (existingRule == null)
+                {
+                    await _ruleRepository.InsertAsync(
+                        new UrlSecurityRule(
+                            GuidGenerator.Create(),
+                            host,
+                            UrlSecurityLevel.Blocked,
+                            UrlRiskCategory.Other,
+                            string.IsNullOrWhiteSpace(auditRemark) ? report.Reason : auditRemark),
+                        autoSave: true,
+                        cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    existingRule.Level = UrlSecurityLevel.Blocked;
+                    existingRule.IsEnabled = true;
+                    if (!string.IsNullOrWhiteSpace(auditRemark))
+                    {
+                        existingRule.Reason = auditRemark;
+                    }
+                    await _ruleRepository.UpdateAsync(existingRule, autoSave: true, cancellationToken: cancellationToken);
+                }
+                await RefreshCacheAsync();
+            }
+        }
+
+        return report;
+    }
+
+    private static IQueryable<UrlSecurityRule> ApplyRuleSorting(IQueryable<UrlSecurityRule> queryable, string sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting))
+        {
+            return queryable.OrderByDescending(x => x.CreationTime);
+        }
+
+        var parts = sorting.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var field = parts[0].ToLowerInvariant();
+        var desc = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return field switch
+        {
+            "host" => desc ? queryable.OrderByDescending(x => x.Host) : queryable.OrderBy(x => x.Host),
+            "level" => desc ? queryable.OrderByDescending(x => x.Level) : queryable.OrderBy(x => x.Level),
+            "hitcount" => desc ? queryable.OrderByDescending(x => x.HitCount) : queryable.OrderBy(x => x.HitCount),
+            "creationtime" => desc ? queryable.OrderByDescending(x => x.CreationTime) : queryable.OrderBy(x => x.CreationTime),
+            _ => queryable.OrderByDescending(x => x.CreationTime)
+        };
+    }
+
+    private static IQueryable<SecurityReport> ApplyReportSorting(IQueryable<SecurityReport> queryable, string sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting))
+        {
+            return queryable.OrderByDescending(x => x.CreationTime);
+        }
+
+        var parts = sorting.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var field = parts[0].ToLowerInvariant();
+        var desc = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return field switch
+        {
+            "status" => desc ? queryable.OrderByDescending(x => x.Status) : queryable.OrderBy(x => x.Status),
+            "targettype" => desc ? queryable.OrderByDescending(x => x.TargetType) : queryable.OrderBy(x => x.TargetType),
+            "creationtime" => desc ? queryable.OrderByDescending(x => x.CreationTime) : queryable.OrderBy(x => x.CreationTime),
+            _ => queryable.OrderByDescending(x => x.CreationTime)
+        };
     }
 }

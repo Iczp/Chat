@@ -1,6 +1,8 @@
 ﻿using Castle.Core.Internal;
 using IczpNet.AbpCommons;
 using IczpNet.AbpTrees;
+using IczpNet.Chat.ChatObjectCategories;
+using IczpNet.Chat.ChatObjectCategoryUnits;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
@@ -12,8 +14,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Caching;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 using Volo.Abp.Uow;
@@ -22,8 +27,10 @@ namespace IczpNet.Chat.ChatObjects;
 
 public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<ChatObject, long, ChatObjectInfo>(repository), IChatObjectManager
 {
-
+    protected IChatObjectRepository ChatObjectRepository { get; } = repository;
+    protected IChatObjectCategoryManager ChatObjectCategoryManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectCategoryManager>();
     protected IChatObjectTypeManager ChatObjectTypeManager => LazyServiceProvider.LazyGetRequiredService<IChatObjectTypeManager>();
+    protected IRepository<ChatObjectType, string> ChatObjectTypeRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<ChatObjectType, string>>();
     protected IMessageSender MessageSender => LazyServiceProvider.LazyGetRequiredService<IMessageSender>();
     protected ISessionGenerator SessionGenerator => LazyServiceProvider.LazyGetRequiredService<ISessionGenerator>();
     protected IDistributedCache<List<long>, Guid> UserChatObjectCache => LazyServiceProvider.LazyGetRequiredService<IDistributedCache<List<long>, Guid>>();
@@ -401,5 +408,223 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
           });
         return kvs.Select(x => x.Value).ToList();
 
+    }
+
+    public virtual async Task<ChatObjectAdminListResult> GetAdminListAsync(
+        ChatObjectAdminQueryFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        filter ??= new ChatObjectAdminQueryFilter();
+
+        var normalizedFilter = new ChatObjectAdminQueryFilter
+        {
+            Keyword = filter.Keyword?.Trim(),
+            Code = filter.Code?.Trim(),
+            AppUserId = filter.AppUserId,
+            ChatObjectTypeId = filter.ChatObjectTypeId?.Trim(),
+            ObjectType = filter.ObjectType,
+            ObjectTypes = filter.ObjectTypes,
+            CategoryIdList = filter.CategoryIdList,
+            IncludeChildCategories = filter.IncludeChildCategories,
+            IsEnabled = filter.IsEnabled,
+            IsDefault = filter.IsDefault,
+            IsPublic = filter.IsPublic,
+            IsStatic = filter.IsStatic,
+            IsActive = filter.IsActive,
+            IsDeveloper = filter.IsDeveloper,
+            Sorting = filter.Sorting,
+            SkipCount = Math.Max(0, filter.SkipCount),
+            MaxResultCount = Math.Clamp(filter.MaxResultCount, 1, 200)
+        };
+
+        List<Guid> resolvedCategoryIds = null;
+        if (normalizedFilter.CategoryIdList != null && normalizedFilter.CategoryIdList.Count > 0)
+        {
+            if (normalizedFilter.IncludeChildCategories)
+            {
+                var categoryQuery = await ChatObjectCategoryManager.QueryCurrentAndAllChildsAsync(normalizedFilter.CategoryIdList);
+                resolvedCategoryIds = await AsyncExecuter.ToListAsync(categoryQuery.Select(x => x.Id), cancellationToken);
+            }
+            else
+            {
+                resolvedCategoryIds = normalizedFilter.CategoryIdList.Distinct().ToList();
+            }
+        }
+
+        return await ChatObjectRepository.GetAdminPagedListAsync(normalizedFilter, resolvedCategoryIds, cancellationToken);
+    }
+
+    public virtual async Task<ChatObjectAdminDetailResult> GetAdminDetailAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await ChatObjectRepository.FindAdminDetailAsync(id, cancellationToken);
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(typeof(ChatObject), id);
+        }
+
+        var categoryUnits = entity.ChatObjectCategoryUnitList?
+            .Where(x => x.Category != null)
+            .ToList() ?? [];
+
+        var entryValues = entity.Entries?
+            .Where(x => x.EntryValue != null)
+            .Select(x => new ChatObjectAdminEntryValueModel
+            {
+                EntryNameId = x.EntryValue.EntryNameId,
+                EntryName = x.EntryValue.EntryName?.Name,
+                EntryValueId = x.EntryValueId,
+                Value = x.EntryValue.Value
+            })
+            .ToList() ?? [];
+
+        var sameUserCount = entity.AppUserId.HasValue
+            ? await ChatObjectRepository.GetCountByAppUserIdAsync(entity.AppUserId.Value, cancellationToken)
+            : 0;
+
+        return new ChatObjectAdminDetailResult
+        {
+            Entity = entity,
+            CategoryIds = categoryUnits.Select(x => x.CategoryId).Distinct().ToList(),
+            CategoryNames = categoryUnits.Select(x => x.Category.Name).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList(),
+            EntryValues = entryValues,
+            SameUserChatObjectCount = sameUserCount
+        };
+    }
+
+    public virtual async Task<ChatObjectAdminDetailResult> UpdateAdminAsync(
+        long id,
+        string name,
+        string code,
+        Genders? gender,
+        string description,
+        string portrait,
+        string thumbnail,
+        bool? isPublic = null,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
+
+        entity.SetName(name);
+        entity.Code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        if (gender.HasValue)
+        {
+            entity.Gender = gender.Value;
+        }
+        entity.Description = description;
+        if (portrait != null)
+        {
+            entity.SetPortrait(portrait);
+        }
+        if (thumbnail != null)
+        {
+            entity.SetThumbnail(thumbnail);
+        }
+        if (isPublic.HasValue)
+        {
+            entity.SetIsPublic(isPublic.Value);
+        }
+
+        await base.UpdateAsync(entity, entity.ParentId, isUnique: true);
+
+        return await GetAdminDetailAsync(id, cancellationToken);
+    }
+
+    public virtual async Task<ChatObjectAdminDetailResult> SetVerificationMethodAdminAsync(
+        long id,
+        VerificationMethods verificationMethod,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
+        entity.SetVerificationMethod(verificationMethod);
+        await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
+        return await GetAdminDetailAsync(id, cancellationToken);
+    }
+
+    public virtual async Task<ChatObjectAdminDetailResult> SetIsEnabledAdminAsync(
+        long id,
+        bool isEnabled,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
+        if (entity.IsStatic && !isEnabled)
+        {
+            throw new BusinessException("ChatAdmin:CannotDisableStaticChatObject", "系统固有聊天对象不允许停用。");
+        }
+
+        entity.SetIsEnabled(isEnabled);
+        await base.UpdateAsync(entity, entity.ParentId, isUnique: false);
+        return await GetAdminDetailAsync(id, cancellationToken);
+    }
+
+    public virtual async Task<ChatObjectAdminDetailResult> CreateAdminAsync(
+        ChatObjectAdminCreateArgs args,
+        CancellationToken cancellationToken = default)
+    {
+        if (args == null || string.IsNullOrWhiteSpace(args.Name))
+        {
+            throw new UserFriendlyException("请输入聊天对象名称。");
+        }
+
+        var normalizedName = args.Name.Trim();
+        var normalizedCode = string.IsNullOrWhiteSpace(args.Code) ? null : args.Code.Trim();
+        var resolvedTypeId = !string.IsNullOrWhiteSpace(args.ChatObjectTypeId)
+            ? args.ChatObjectTypeId.Trim()
+            : (args.ObjectType?.ToString() ?? nameof(ChatObjectTypeEnums.Personal));
+
+        var chatObjectType = await ChatObjectTypeRepository.FindAsync(resolvedTypeId, cancellationToken: cancellationToken);
+        if (chatObjectType == null)
+        {
+            throw new UserFriendlyException($"聊天对象类型不存在: {resolvedTypeId}");
+        }
+
+        var entity = new ChatObject(normalizedName, normalizedCode, chatObjectType, null);
+        entity.SetName(normalizedName);
+        entity.Description = args.Description;
+        if (args.Gender.HasValue)
+        {
+            entity.Gender = args.Gender.Value;
+        }
+        entity.SetIsEnabled(args.IsEnabled);
+        entity.SetIsPublic(args.IsPublic);
+        entity.SetVerificationMethod(args.VerificationMethod);
+        if (args.Portrait != null)
+        {
+            entity.SetPortrait(args.Portrait);
+        }
+        if (args.Thumbnail != null)
+        {
+            entity.SetThumbnail(args.Thumbnail);
+        }
+        if (args.CategoryIds != null && args.CategoryIds.Count > 0)
+        {
+            entity.ChatObjectCategoryUnitList = args.CategoryIds
+                .Distinct()
+                .Select(cid => new ChatObjectCategoryUnit { CategoryId = cid })
+                .ToList();
+        }
+
+        await base.CreateAsync(entity, isUnique: true);
+
+        return await GetAdminDetailAsync(entity.Id, cancellationToken);
+    }
+
+    public virtual async Task DeleteAdminAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.FindAsync(id, cancellationToken: cancellationToken);
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(typeof(ChatObject), id);
+        }
+
+        if (entity.IsStatic)
+        {
+            throw new BusinessException("ChatAdmin:CannotDeleteStaticChatObject", "系统内置聊天对象不允许删除。");
+        }
+
+        await Repository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);
     }
 }

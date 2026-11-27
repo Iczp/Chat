@@ -1,8 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IczpNet.Chat.AiRuns;
+
+public class AiRunAdminListResult
+{
+    public long TotalCount { get; set; }
+
+    public List<AiRun> Items { get; set; } = new();
+}
 
 public interface IAiRunManager
 {
@@ -55,4 +63,32 @@ public interface IAiRunManager
     /// 获取指定任务
     /// </summary>
     Task<AiRun> GetAsync(Guid runId);
+
+    Task<AiRunAdminListResult> GetAdminListAsync(
+        string keyword = null,
+        AiRunStatus? status = null,
+        string provider = null,
+        Guid? sessionId = null,
+        Guid? requesterSessionUnitId = null,
+        long? sourceMessageId = null,
+        long? outputMessageId = null,
+        string leaseOwner = null,
+        DateTime? startCreationTime = null,
+        DateTime? endCreationTime = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default);
+
+    Task<AiRun> GetAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteAdminAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteManyAdminAsync(
+        List<Guid> idList,
+        CancellationToken cancellationToken = default);
 }

@@ -4,7 +4,9 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
     <RootNamespace>IczpNet.Chat.Admin</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Authors>IczpNet</Authors>
 		<RepositoryUrl>https://github.com/Iczp/Chat.git</RepositoryUrl>
@@ -27,6 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Ddd.Application" Version="10.6.1" />
+    <ProjectReference Include="..\IczpNet.Chat.Admin.Application.Contracts\IczpNet.Chat.Admin.Application.Contracts.csproj" />
     <ProjectReference Include="..\IczpNet.Chat.Domain\IczpNet.Chat.Domain.csproj" />
   </ItemGroup>
 

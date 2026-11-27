@@ -3,8 +3,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
@@ -205,5 +208,126 @@ public class AiRunManager(
     public async Task<AiRun> GetAsync(Guid runId)
     {
         return await AiRunRepository.GetAsync(runId);
+    }
+
+    public virtual async Task<AiRunAdminListResult> GetAdminListAsync(
+        string keyword = null,
+        AiRunStatus? status = null,
+        string provider = null,
+        Guid? sessionId = null,
+        Guid? requesterSessionUnitId = null,
+        long? sourceMessageId = null,
+        long? outputMessageId = null,
+        string leaseOwner = null,
+        DateTime? startCreationTime = null,
+        DateTime? endCreationTime = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = (await AiRunRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .WhereIf(!string.IsNullOrWhiteSpace(keyword), x =>
+                x.Provider.Contains(keyword.Trim()) ||
+                (x.LastErrorCode != null && x.LastErrorCode.Contains(keyword.Trim())) ||
+                (x.LastErrorMessage != null && x.LastErrorMessage.Contains(keyword.Trim())) ||
+                (x.LeaseOwner != null && x.LeaseOwner.Contains(keyword.Trim())))
+            .WhereIf(status.HasValue, x => x.Status == status.Value)
+            .WhereIf(!string.IsNullOrWhiteSpace(provider), x => x.Provider == provider.Trim())
+            .WhereIf(sessionId.HasValue, x => x.SessionId == sessionId.Value)
+            .WhereIf(requesterSessionUnitId.HasValue, x => x.RequesterSessionUnitId == requesterSessionUnitId.Value)
+            .WhereIf(sourceMessageId.HasValue, x => x.SourceMessageId == sourceMessageId.Value)
+            .WhereIf(outputMessageId.HasValue, x => x.OutputMessageId == outputMessageId.Value)
+            .WhereIf(!string.IsNullOrWhiteSpace(leaseOwner), x => x.LeaseOwner == leaseOwner.Trim())
+            .WhereIf(startCreationTime.HasValue, x => x.CreationTime >= startCreationTime.Value)
+            .WhereIf(endCreationTime.HasValue, x => x.CreationTime <= endCreationTime.Value);
+
+        var totalCount = await AsyncExecuter.LongCountAsync(queryable, cancellationToken);
+        if (totalCount == 0)
+        {
+            return new AiRunAdminListResult();
+        }
+
+        queryable = ApplySorting(queryable, sorting);
+
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .Skip(Math.Max(0, skipCount))
+                .Take(Math.Clamp(maxResultCount, 1, 200)),
+            cancellationToken);
+
+        return new AiRunAdminListResult
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
+    }
+
+    public virtual async Task<AiRun> GetAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await AiRunRepository.FindAsync(id, cancellationToken: cancellationToken);
+        return entity ?? throw new EntityNotFoundException(typeof(AiRun), id);
+    }
+
+    public virtual async Task DeleteAdminAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await AiRunRepository.FindAsync(id, cancellationToken: cancellationToken)
+            ?? throw new EntityNotFoundException(typeof(AiRun), id);
+
+        if (entity.Status == AiRunStatus.Running)
+        {
+            throw new BusinessException("ChatAdmin:CannotDeleteRunningAiRun", "执行中的 AI 任务不允许删除，请先取消。");
+        }
+
+        await AiRunRepository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    public virtual async Task DeleteManyAdminAsync(
+        List<Guid> idList,
+        CancellationToken cancellationToken = default)
+    {
+        if (idList == null || idList.Count == 0)
+        {
+            return;
+        }
+
+        var distinctIds = idList.Distinct().Take(200).ToList();
+        var runs = await AiRunRepository.GetListAsync(x => distinctIds.Contains(x.Id), cancellationToken: cancellationToken);
+
+        if (runs.Any(x => x.Status == AiRunStatus.Running))
+        {
+            throw new BusinessException("ChatAdmin:CannotDeleteRunningAiRun", "执行中的 AI 任务不允许删除，请先取消。");
+        }
+
+        if (runs.Count > 0)
+        {
+            await AiRunRepository.DeleteManyAsync(runs, autoSave: true, cancellationToken: cancellationToken);
+        }
+    }
+
+    private static IQueryable<AiRun> ApplySorting(IQueryable<AiRun> queryable, string sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting))
+        {
+            return queryable.OrderByDescending(x => x.CreationTime);
+        }
+
+        var parts = sorting.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var field = parts[0].ToLowerInvariant();
+        var desc = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return field switch
+        {
+            "status" => desc ? queryable.OrderByDescending(x => x.Status) : queryable.OrderBy(x => x.Status),
+            "provider" => desc ? queryable.OrderByDescending(x => x.Provider) : queryable.OrderBy(x => x.Provider),
+            "attemptcount" => desc ? queryable.OrderByDescending(x => x.AttemptCount) : queryable.OrderBy(x => x.AttemptCount),
+            "creationtime" => desc ? queryable.OrderByDescending(x => x.CreationTime) : queryable.OrderBy(x => x.CreationTime),
+            _ => queryable.OrderByDescending(x => x.CreationTime)
+        };
     }
 }

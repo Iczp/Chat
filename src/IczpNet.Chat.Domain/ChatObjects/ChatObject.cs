@@ -381,4 +381,9 @@ public class ChatObject : BaseTreeEntity<ChatObject, long>, IName, IChatObject, 
     {
         IsEnabled = isEnabled;
     }
+
+    public virtual void SetIsPublic(bool isPublic)
+    {
+        IsPublic = isPublic;
+    }
 }

@@ -1,9 +1,25 @@
 using IczpNet.Chat.Enums;
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.Security;
+
+public class UrlSecurityRuleAdminListResult
+{
+    public long TotalCount { get; set; }
+
+    public List<UrlSecurityRule> Items { get; set; } = new();
+}
+
+public class SecurityReportAdminListResult
+{
+    public long TotalCount { get; set; }
+
+    public List<SecurityReport> Items { get; set; } = new();
+}
 
 /// <summary>
 /// URL 安全风控与违规投诉领域管理器
@@ -31,6 +47,71 @@ public interface IUrlSecurityManager : IDomainService
     /// 将数据库中的黑白名单同步刷新至 Redis 缓存
     /// </summary>
     Task RefreshCacheAsync();
+}
+
+public interface IUrlSecurityAdminManager : IUrlSecurityManager
+{
+    Task<UrlSecurityRuleAdminListResult> GetRulesAdminListAsync(
+        string keyword = null,
+        UrlSecurityLevel? level = null,
+        UrlRiskCategory? category = null,
+        bool? isEnabled = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default);
+
+    Task<UrlSecurityRule> GetRuleAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<UrlSecurityRule> CreateRuleAdminAsync(
+        string host,
+        UrlSecurityLevel level,
+        UrlRiskCategory category,
+        string reason,
+        bool isEnabled,
+        DateTime? expireTime,
+        CancellationToken cancellationToken = default);
+
+    Task<UrlSecurityRule> UpdateRuleAdminAsync(
+        Guid id,
+        string host,
+        UrlSecurityLevel level,
+        UrlRiskCategory category,
+        string reason,
+        bool isEnabled,
+        DateTime? expireTime,
+        CancellationToken cancellationToken = default);
+
+    Task<UrlSecurityRule> SetRuleEnabledAdminAsync(
+        Guid id,
+        bool isEnabled,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteRuleAdminAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<SecurityReportAdminListResult> GetReportsAdminListAsync(
+        string keyword = null,
+        int? status = null,
+        string targetType = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default);
+
+    Task<SecurityReport> GetReportAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<SecurityReport> HandleReportAdminAsync(
+        Guid id,
+        int status,
+        string auditRemark,
+        bool addBlacklist,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

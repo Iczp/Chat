@@ -3,6 +3,7 @@ using IczpNet.Chat.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Users;
 
@@ -78,4 +79,41 @@ public interface IChatObjectManager : ITreeManager<ChatObject, long, ChatObjectI
     Task<ChatObject> BingAppUserIdAsync(long id, Guid appUserId);
 
     Task<ChatObject> GenerateByUserAsync(UserEto userInfo);
+
+    Task<ChatObjectAdminListResult> GetAdminListAsync(
+        ChatObjectAdminQueryFilter filter,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatObjectAdminDetailResult> GetAdminDetailAsync(
+        long id,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatObjectAdminDetailResult> UpdateAdminAsync(
+        long id,
+        string name,
+        string code,
+        Genders? gender,
+        string description,
+        string portrait,
+        string thumbnail,
+        bool? isPublic = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatObjectAdminDetailResult> SetVerificationMethodAdminAsync(
+        long id,
+        VerificationMethods verificationMethod,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatObjectAdminDetailResult> SetIsEnabledAdminAsync(
+        long id,
+        bool isEnabled,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatObjectAdminDetailResult> CreateAdminAsync(
+        ChatObjectAdminCreateArgs args,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteAdminAsync(
+        long id,
+        CancellationToken cancellationToken = default);
 }

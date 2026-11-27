@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
@@ -294,5 +295,120 @@ public class BlobManager(
             ? string.Empty
             : (suffix.StartsWith('.') ? suffix.ToLowerInvariant() : $".{suffix.ToLowerInvariant()}");
         return $"objects/{sha256[..2]}/{sha256[2..4]}/{sha256}_{versionId:N}{cleanSuffix}";
+    }
+
+    public virtual async Task<BlobAdminListResult> GetAdminListAsync(
+        string keyword = null,
+        string container = null,
+        bool? isPublic = null,
+        bool? isStatic = null,
+        int skipCount = 0,
+        int maxResultCount = 50,
+        string sorting = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queryable = (await Repository.GetQueryableAsync())
+            .WhereIf(!string.IsNullOrWhiteSpace(keyword), x =>
+                (x.FileName != null && x.FileName.Contains(keyword.Trim())) ||
+                (x.Name != null && x.Name.Contains(keyword.Trim())) ||
+                (x.MimeType != null && x.MimeType.Contains(keyword.Trim())))
+            .WhereIf(!string.IsNullOrWhiteSpace(container), x => x.Container == container.Trim())
+            .WhereIf(isPublic.HasValue, x => x.IsPublic == isPublic.Value)
+            .WhereIf(isStatic.HasValue, x => x.IsStatic == isStatic.Value);
+
+        var totalCount = await AsyncExecuter.LongCountAsync(queryable, cancellationToken);
+        if (totalCount == 0)
+        {
+            return new BlobAdminListResult();
+        }
+
+        queryable = ApplySorting(queryable, sorting);
+
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .Skip(Math.Max(0, skipCount))
+                .Take(Math.Clamp(maxResultCount, 1, 200)),
+            cancellationToken);
+
+        return new BlobAdminListResult
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
+    }
+
+    public virtual async Task<Blob> GetAdminDetailAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.FindAsync(id, cancellationToken: cancellationToken);
+        return entity ?? throw new EntityNotFoundException(typeof(Blob), id);
+    }
+
+    public virtual async Task<Blob> UpdateAdminAsync(
+        Guid id,
+        string fileName,
+        bool? isPublic,
+        bool? isStatic,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            entity.FileName = fileName.Trim();
+        }
+        if (isPublic.HasValue)
+        {
+            entity.IsPublic = isPublic.Value;
+        }
+        if (isStatic.HasValue)
+        {
+            entity.IsStatic = isStatic.Value;
+        }
+
+        await Repository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+        return entity;
+    }
+
+    public virtual async Task DeleteAdminAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await Repository.FindAsync(id, cancellationToken: cancellationToken)
+            ?? throw new EntityNotFoundException(typeof(Blob), id);
+
+        if (entity.IsStatic)
+        {
+            throw new BusinessException("ChatAdmin:CannotDeleteStaticBlob", "系统固有附件不允许删除。");
+        }
+
+        if (entity.RefCount > 0)
+        {
+            throw new BusinessException("ChatAdmin:BlobInUse", "该附件仍被消息引用，无法删除。");
+        }
+
+        await Repository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+    }
+
+    private static IQueryable<Blob> ApplySorting(IQueryable<Blob> queryable, string sorting)
+    {
+        if (string.IsNullOrWhiteSpace(sorting))
+        {
+            return queryable.OrderByDescending(x => x.CreationTime);
+        }
+
+        var parts = sorting.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var field = parts[0].ToLowerInvariant();
+        var desc = parts.Length > 1 && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return field switch
+        {
+            "filename" => desc ? queryable.OrderByDescending(x => x.FileName) : queryable.OrderBy(x => x.FileName),
+            "filesize" => desc ? queryable.OrderByDescending(x => x.FileSize) : queryable.OrderBy(x => x.FileSize),
+            "container" => desc ? queryable.OrderByDescending(x => x.Container) : queryable.OrderBy(x => x.Container),
+            "creationtime" => desc ? queryable.OrderByDescending(x => x.CreationTime) : queryable.OrderBy(x => x.CreationTime),
+            _ => queryable.OrderByDescending(x => x.CreationTime)
+        };
     }
 }
