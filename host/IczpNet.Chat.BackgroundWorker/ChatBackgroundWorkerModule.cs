@@ -83,6 +83,10 @@ public class ChatBackgroundWorkerModule : AbpModule
             options.VideoSetting.ImgSnapshotSize = ParseSize(section["VideoSetting:ImgSnapshotSize"], options.VideoSetting.ImgSnapshotSize);
             options.VideoSetting.GifSnapshotSize = ParseSize(section["VideoSetting:GifSnapshotSize"], options.VideoSetting.GifSnapshotSize);
         });
+        Configure<AttachmentUploadOptions>(options =>
+        {
+            configuration.GetSection("AttachmentUpload").Bind(options);
+        });
         Configure<AbpBackgroundJobWorkerOptions>(options => options.DefaultTimeout = 864000);
         Configure<AbpDistributedCacheOptions>(options => options.KeyPrefix = configuration["Cache:KeyPrefix"] ?? "Chat:");
         Configure<AbpBackgroundJobOptions>(options => options.IsJobExecutionEnabled = true);

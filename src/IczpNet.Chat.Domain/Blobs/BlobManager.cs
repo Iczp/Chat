@@ -248,6 +248,9 @@ public class BlobManager(
         return (blob.Container, blob.Name);
     }
 
+    public virtual Task<BlobObject> FindStorageObjectAsync(Guid storageObjectId, CancellationToken cancellationToken = default)
+        => BlobObjectRepository.FindAsync(storageObjectId, cancellationToken: cancellationToken);
+
     public virtual async Task SaveBytesAsync(string container, string name, byte[] bytes)
     {
         var _blobContainer = BlobContainerFactory.Create(container);

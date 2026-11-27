@@ -19,6 +19,7 @@ public partial class MessageManager
 {
     protected IRepository<BlobMessageRef, Guid> BlobMessageRefRepository => LazyServiceProvider.LazyGetRequiredService<IRepository<BlobMessageRef, Guid>>();
     protected IBlobResolver BlobResolver => LazyServiceProvider.LazyGetRequiredService<IBlobResolver>();
+    protected IBlobManager BlobManager => LazyServiceProvider.LazyGetRequiredService<IBlobManager>();
     protected IBackgroundJobManager BackgroundJobManager => LazyServiceProvider.LazyGetRequiredService<IBackgroundJobManager>();
     protected UrlNormalizers.IUrlNormalizer UrlNormalizer => LazyServiceProvider.LazyGetRequiredService<UrlNormalizers.IUrlNormalizer>();
     protected ICurrentUser CurrentUser => LazyServiceProvider.LazyGetService<ICurrentUser>();
@@ -189,6 +190,69 @@ public partial class MessageManager
             {
                 video.GifUrl = await BlobResolver.GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
             }
+            else if (!video.GifBlobId.HasValue &&
+                     video.BlobId.HasValue &&
+                     Config.VideoSetting.IsGenerateSnapshot &&
+                     blobs.TryGetValue(video.BlobId.Value, out var videoBlob) &&
+                     videoBlob.StorageObjectId.HasValue)
+            {
+                var reuseManager = LazyServiceProvider?.LazyGetService<IAttachmentProcessingReuseManager>();
+                if (reuseManager?.IsEnabled() == true)
+                {
+                    var storageObj = await BlobManager.FindStorageObjectAsync(videoBlob.StorageObjectId.Value);
+                    if (storageObj != null && storageObj.Status == BlobObjectStatus.Ready)
+                    {
+                        var gifRecipeHash = reuseManager.BuildVideoGifRecipeHash(Config.VideoSetting);
+                        var readyGif = await reuseManager.FindReadyResultAsync(
+                            storageObj.StorageScope,
+                            storageObj.Container,
+                            storageObj.Sha256,
+                            storageObj.FileSize,
+                            AttachmentMediaType.Video,
+                            BlobRoles.Gif,
+                            gifRecipeHash);
+
+                        if (readyGif?.OutputStorageObjectId != null)
+                        {
+                            var reusedGifBlobId = GuidGenerator.Create();
+                            var reusedDir = await BlobResolver.GetDirectoryNameAsync(new BlobContext
+                            {
+                                BlobId = reusedGifBlobId,
+                                Container = videoBlob.Container,
+                                SessionId = senderSessionUnit.SessionId ?? Guid.Empty,
+                                SessionUnitId = senderSessionUnit.Id,
+                                ChatObjectId = senderSessionUnit.OwnerId,
+                                MediaType = AttachmentMediaType.Snapshot,
+                                BlobRole = BlobRoles.Gif,
+                                FileName = $"{videoBlob.FileName}.gif",
+                                MimeType = readyGif.OutputMimeType ?? "image/gif",
+                                FileSize = readyGif.OutputFileSize ?? 0,
+                            });
+                            var reusedFileName = await BlobResolver.GenerateFileNameAsync(readyGif.OutputSuffix ?? ".gif");
+                            var reusedGifBlob = await BlobManager.CreateAsync(new Blob(reusedGifBlobId, videoBlob.Container)
+                            {
+                                IsPublic = videoBlob.IsPublic,
+                                FileSize = readyGif.OutputFileSize ?? 0,
+                                MimeType = readyGif.OutputMimeType ?? "image/gif",
+                                FileName = $"{System.IO.Path.GetFileNameWithoutExtension(videoBlob.FileName)}.gif",
+                                Name = System.IO.Path.Combine(reusedDir, reusedFileName).Replace(@"\", "/"),
+                                Suffix = readyGif.OutputSuffix ?? ".gif",
+                                StorageObjectId = readyGif.OutputStorageObjectId,
+                                UploaderChatObjectId = senderSessionUnit.OwnerId,
+                                UploadSessionUnitId = senderSessionUnit.Id,
+                                UploadSessionId = senderSessionUnit.SessionId,
+                                ParentBlobId = videoBlob.Id,
+                                Role = BlobRoles.Gif,
+                                Status = BlobStatus.Temp,
+                                ExpireTime = videoBlob.ExpireTime,
+                                RefCount = 0,
+                            });
+                            video.GifBlobId = reusedGifBlob.Id;
+                            video.GifUrl = await BlobResolver.GetFileUrlAsync(reusedGifBlob.Id, reusedGifBlob.MimeType);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -240,6 +304,43 @@ public partial class MessageManager
             !video.GifBlobId.HasValue &&
             Config.VideoSetting.IsGenerateSnapshot)
         {
+            var shouldEnqueue = true;
+            var reuseManager = LazyServiceProvider?.LazyGetService<IAttachmentProcessingReuseManager>();
+            if (reuseManager?.IsEnabled() == true)
+            {
+                var videoBlob = (await Repository.GetBlobsAsNoTrackingAsync([video.BlobId.Value])).FirstOrDefault();
+                if (videoBlob?.StorageObjectId != null)
+                {
+                    var storageObj = await BlobManager.FindStorageObjectAsync(videoBlob.StorageObjectId.Value);
+                    if (storageObj != null && storageObj.Status == BlobObjectStatus.Ready)
+                    {
+                        var gifRecipeHash = reuseManager.BuildVideoGifRecipeHash(Config.VideoSetting);
+                        var task = await reuseManager.GetOrCreatePendingTaskAsync(
+                            storageObj.StorageScope,
+                            storageObj.Container,
+                            storageObj.Sha256,
+                            storageObj.FileSize,
+                            AttachmentMediaType.Video,
+                            BlobRoles.Gif,
+                            gifRecipeHash);
+
+                        await reuseManager.RegisterWaiterAsync(task.Id, message.Id, video.BlobId.Value, BlobRoles.Gif);
+
+                        if (task.Status == AttachmentProcessingStatus.Processing &&
+                            task.LeaseExpireTime.HasValue &&
+                            task.LeaseExpireTime.Value > Clock.Now)
+                        {
+                            shouldEnqueue = false;
+                        }
+                    }
+                }
+            }
+
+            if (!shouldEnqueue)
+            {
+                return;
+            }
+
             var args = new GenerateVideoGifArgs
             {
                 MessageId = message.Id,

@@ -166,6 +166,12 @@ public class TempBlobCleanupService(
                     await blobObjectRepository.UpdateAsync(obj, autoSave: true, cancellationToken: cancellationToken);
                 }
 
+                var reuseManager = LazyServiceProvider?.LazyGetService<IAttachmentProcessingReuseManager>();
+                if (reuseManager != null)
+                {
+                    await reuseManager.InvalidateByStorageObjectIdAsync(objectId, cancellationToken);
+                }
+
                 physicalContainerToDelete = obj.Container;
                 physicalNameToDelete = obj.StorageName;
                 await markUow.CompleteAsync(cancellationToken);

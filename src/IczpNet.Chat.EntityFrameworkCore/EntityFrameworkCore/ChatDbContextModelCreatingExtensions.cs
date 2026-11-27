@@ -451,6 +451,44 @@ public static class ChatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.Status, x.CreationTime });
         });
 
+        builder.Entity<AttachmentProcessingResult>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(AttachmentProcessingResult)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.StorageScope).IsRequired().HasMaxLength(64);
+            b.Property(x => x.Container).IsRequired().HasMaxLength(50);
+            b.Property(x => x.SourceSha256).IsRequired().HasMaxLength(64);
+            b.Property(x => x.RecipeHash).IsRequired().HasMaxLength(64);
+            b.Property(x => x.OutputMimeType).HasMaxLength(128);
+            b.Property(x => x.OutputSuffix).HasMaxLength(16);
+            b.Property(x => x.MetadataJson).HasMaxLength(2000);
+            b.Property(x => x.LeaseOwner).HasMaxLength(128);
+            b.Property(x => x.LastError).HasMaxLength(1024);
+            b.Property(x => x.Version).IsConcurrencyToken();
+            b.HasIndex(x => new
+            {
+                x.StorageScope,
+                x.Container,
+                x.SourceSha256,
+                x.SourceFileSize,
+                x.MediaType,
+                x.OutputRole,
+                x.RecipeHash
+            }).IsUnique().HasFilter("IsDeleted = 0");
+            b.HasIndex(x => x.OutputStorageObjectId);
+            b.HasIndex(x => new { x.Status, x.LeaseExpireTime });
+        });
+
+        builder.Entity<AttachmentProcessingWaiter>(b =>
+        {
+            b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(AttachmentProcessingWaiter)}", ChatDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.HasIndex(x => new { x.MessageId, x.OutputRole })
+                .IsUnique()
+                .HasFilter("IsDeleted = 0");
+            b.HasIndex(x => new { x.ProcessingResultId, x.Status });
+        });
+
         builder.Entity<BlobReuseRecord>(b =>
         {
             b.ToTable($"{ChatDbProperties.DbTablePrefix}_{nameof(BlobReuseRecord)}", ChatDbProperties.DbSchema);

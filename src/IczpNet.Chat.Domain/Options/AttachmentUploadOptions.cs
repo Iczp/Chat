@@ -86,4 +86,9 @@ public class AttachmentUploadOptions
     /// 是否启用同账号多身份附件上传兑换复用（关闭后 ReuseAsync 显式拒绝）
     /// </summary>
     public bool EnableAttachmentReuse { get; set; } = true;
+
+    /// <summary>
+    /// 是否启用聊天附件处理结果复用（关闭后回退到原有独立处理路径）
+    /// </summary>
+    public bool EnableProcessingResultReuse { get; set; } = true;
 }

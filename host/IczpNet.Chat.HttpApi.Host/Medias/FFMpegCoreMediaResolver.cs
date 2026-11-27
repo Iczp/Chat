@@ -13,8 +13,12 @@ namespace IczpNet.Chat;
 // FFmpeg is a Chat host concern; the main IM host no longer supplies this resolver.
 public class FFMpegCoreMediaResolver(IConfiguration configuration) : NullMediaResolver, IMediaResolver
 {
-    public override async Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName)
+    public override Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName)
+        => GetVideoInfoAsync(bytes, fileName, new VideoProcessOptions());
+
+    public override async Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName, VideoProcessOptions options)
     {
+        options ??= new VideoProcessOptions();
         string tempVideoPath = null;
         string gifSnapshotPath = null;
         string imgSnapshotPath = null;
@@ -38,13 +42,13 @@ public class FFMpegCoreMediaResolver(IConfiguration configuration) : NullMediaRe
             imgSnapshotPath = Path.Combine(outputPath, $"{tempFileName}.png");
             var (width, height) = Options.VideoSetting.ImgSnapshotSize;
             var gifSize = Options.VideoSetting.GifSnapshotSize;
-            var imageCreated = await FFMpeg.SnapshotAsync(tempVideoPath, imgSnapshotPath,
+            var imageCreated = options.IncludeSnapshot && await FFMpeg.SnapshotAsync(tempVideoPath, imgSnapshotPath,
                 new Size(width, height), TimeSpan.FromSeconds(Options.VideoSetting.ImgCaptureSeconds));
             var gifStartSeconds = Math.Min(Math.Max(Options.VideoSetting.ImgCaptureSeconds, 0),
                 Math.Max(mediaInfo.Duration.TotalSeconds - 0.1, 0));
             var gifDurationSeconds = Math.Min(Math.Max(Options.VideoSetting.GifSeconds, 0),
                 mediaInfo.Duration.TotalSeconds - gifStartSeconds);
-            var gifCreated = gifDurationSeconds > 0 && await FFMpeg.GifSnapshotAsync(tempVideoPath, gifSnapshotPath,
+            var gifCreated = options.IncludeGif && gifDurationSeconds > 0 && await FFMpeg.GifSnapshotAsync(tempVideoPath, gifSnapshotPath,
                 new Size(gifSize.Width, gifSize.Height),
                 captureTime: TimeSpan.FromSeconds(gifStartSeconds),
                 duration: TimeSpan.FromSeconds(gifDurationSeconds));

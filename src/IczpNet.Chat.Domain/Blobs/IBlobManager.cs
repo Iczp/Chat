@@ -14,6 +14,8 @@ public interface IBlobManager
 
     Task<(string Container, string StorageName)> ResolvePhysicalLocationAsync(Blob blob, CancellationToken cancellationToken = default);
 
+    Task<BlobObject> FindStorageObjectAsync(Guid storageObjectId, CancellationToken cancellationToken = default);
+
     Task<Blob> CreateAsync(Blob blob);
 
     Task<Blob> GetEntityAsync(string container, string name);

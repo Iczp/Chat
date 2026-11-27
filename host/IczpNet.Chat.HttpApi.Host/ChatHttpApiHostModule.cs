@@ -133,6 +133,7 @@ public class ChatHttpApiHostModule : AbpModule
         var maxSnapshotSize = Math.Max(videoOptions.MaxSnapshotSize, attachmentUploadOptions.MaxSnapshotSize);
         Configure<AttachmentUploadOptions>(options =>
         {
+            configuration.GetSection("AttachmentUpload").Bind(options);
             options.MaxVideoSize = maxVideoSize;
             options.MaxSnapshotSize = maxSnapshotSize;
         });

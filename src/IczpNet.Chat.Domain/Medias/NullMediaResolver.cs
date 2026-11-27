@@ -18,6 +18,11 @@ public class NullMediaResolver : DomainService, IMediaResolver
 
     public virtual Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName)
     {
+        return GetVideoInfoAsync(bytes, fileName, new VideoProcessOptions());
+    }
+
+    public virtual Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName, VideoProcessOptions options)
+    {
         throw new System.NotImplementedException();
     }
 
