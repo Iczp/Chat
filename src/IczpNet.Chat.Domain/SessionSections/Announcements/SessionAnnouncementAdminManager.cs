@@ -77,4 +77,15 @@ public class SessionAnnouncementAdminManager(ISessionAnnouncementRepository repo
 
         return entity;
     }
+
+    public virtual async Task<SessionAnnouncement> SetPinnedAdminAsync(
+        Guid id,
+        bool isPinned,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await GetAdminDetailAsync(id, cancellationToken);
+        entity.SetPinned(isPinned, Clock.Now);
+        await Repository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+        return entity;
+    }
 }

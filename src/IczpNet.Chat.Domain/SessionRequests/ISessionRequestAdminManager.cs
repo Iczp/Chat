@@ -28,4 +28,10 @@ public interface ISessionRequestAdminManager
     Task<SessionRequest> GetAdminDetailAsync(
         Guid id,
         CancellationToken cancellationToken = default);
+
+    Task<SessionRequest> HandleAdminAsync(
+        Guid id,
+        bool isAgreed,
+        string handleMessage,
+        CancellationToken cancellationToken = default);
 }

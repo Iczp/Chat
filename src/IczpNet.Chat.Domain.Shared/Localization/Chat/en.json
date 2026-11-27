@@ -115,12 +115,14 @@
     "Permission:ChatAdmin.SessionRequests": "Session Requests",
     "Permission:ChatAdmin.SessionRequests.GetList": "View list",
     "Permission:ChatAdmin.SessionRequests.GetDetail": "View detail",
+    "Permission:ChatAdmin.SessionRequests.Handle": "Handle request",
     "Permission:ChatAdmin.SessionRoles": "Session Roles",
     "Permission:ChatAdmin.SessionRoles.GetList": "View list",
     "Permission:ChatAdmin.SessionRoles.GetDetail": "View detail",
     "Permission:ChatAdmin.SessionAnnouncements": "Session Announcements",
     "Permission:ChatAdmin.SessionAnnouncements.GetList": "View list",
     "Permission:ChatAdmin.SessionAnnouncements.GetDetail": "View detail",
+    "Permission:ChatAdmin.SessionAnnouncements.Update": "Update/Pin announcement",
 
     "code-generator-localization": "Do not modify or delete this line of comments"
   }

@@ -89,4 +89,15 @@ public class SessionAdminManager(ISessionRepository sessionRepository)
         await SessionRepository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
         return entity;
     }
+
+    public virtual async Task<Session> SetIsAllMutedAdminAsync(
+        Guid id,
+        bool isAllMuted,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await GetAdminDetailAsync(id, cancellationToken);
+        entity.SetRoomPolicies(isAllMuted: isAllMuted);
+        await SessionRepository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+        return entity;
+    }
 }

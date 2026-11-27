@@ -255,12 +255,14 @@
     "Permission:ChatAdmin.SessionRequests": "入群与好友申请",
     "Permission:ChatAdmin.SessionRequests.GetList": "查看列表",
     "Permission:ChatAdmin.SessionRequests.GetDetail": "查看详情",
+    "Permission:ChatAdmin.SessionRequests.Handle": "审批处理",
     "Permission:ChatAdmin.SessionRoles": "群角色管理",
     "Permission:ChatAdmin.SessionRoles.GetList": "查看列表",
     "Permission:ChatAdmin.SessionRoles.GetDetail": "查看详情",
     "Permission:ChatAdmin.SessionAnnouncements": "群公告管理",
     "Permission:ChatAdmin.SessionAnnouncements.GetList": "查看列表",
     "Permission:ChatAdmin.SessionAnnouncements.GetDetail": "查看详情",
+    "Permission:ChatAdmin.SessionAnnouncements.Update": "编辑/置顶公告",
 
     "code-generator-localization": "Do not modify or delete this line of comments"
   }

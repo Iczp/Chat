@@ -53,6 +53,20 @@ public class SessionRequestAppService(ISessionRequestAdminManager sessionRequest
         return MapToDto(entity);
     }
 
+    [Authorize(ChatAdminPermissions.SessionRequests.Handle)]
+    public virtual async Task<SessionRequestAdminDto> HandleAsync(
+        Guid id,
+        SessionRequestAdminHandleInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await SessionRequestAdminManager.HandleAdminAsync(
+            id,
+            input.IsAgreed,
+            input.HandleMessage,
+            cancellationToken);
+        return MapToDto(entity);
+    }
+
     private static SessionRequestAdminDto MapToDto(SessionRequest entity)
     {
         return new SessionRequestAdminDto

@@ -27,4 +27,9 @@ public interface ISessionAnnouncementAdminManager
     Task<SessionAnnouncement> GetAdminDetailAsync(
         Guid id,
         CancellationToken cancellationToken = default);
+
+    Task<SessionAnnouncement> SetPinnedAdminAsync(
+        Guid id,
+        bool isPinned,
+        CancellationToken cancellationToken = default);
 }

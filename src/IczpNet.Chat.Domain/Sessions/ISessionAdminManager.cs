@@ -33,4 +33,9 @@ public interface ISessionAdminManager
         Guid id,
         bool isEnabled,
         CancellationToken cancellationToken = default);
+
+    Task<Session> SetIsAllMutedAdminAsync(
+        Guid id,
+        bool isAllMuted,
+        CancellationToken cancellationToken = default);
 }

@@ -50,6 +50,13 @@ public class SessionRequestAdminDto : EntityDto<Guid>
     public DateTime CreationTime { get; set; }
 }
 
+public class SessionRequestAdminHandleInput
+{
+    public bool IsAgreed { get; set; }
+
+    public string HandleMessage { get; set; }
+}
+
 public interface ISessionRequestAdminAppService : IApplicationService
 {
     Task<PagedResultDto<SessionRequestAdminDto>> GetListAsync(
@@ -58,5 +65,10 @@ public interface ISessionRequestAdminAppService : IApplicationService
 
     Task<SessionRequestAdminDto> GetAsync(
         Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<SessionRequestAdminDto> HandleAsync(
+        Guid id,
+        SessionRequestAdminHandleInput input,
         CancellationToken cancellationToken = default);
 }

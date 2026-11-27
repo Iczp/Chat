@@ -57,6 +57,11 @@ public class SessionAnnouncementAdminDto : EntityDto<Guid>
     public DateTime CreationTime { get; set; }
 }
 
+public class SessionAnnouncementAdminSetPinnedInput
+{
+    public bool IsPinned { get; set; }
+}
+
 public interface ISessionAnnouncementAdminAppService : IApplicationService
 {
     Task<PagedResultDto<SessionAnnouncementAdminDto>> GetListAsync(
@@ -65,5 +70,10 @@ public interface ISessionAnnouncementAdminAppService : IApplicationService
 
     Task<SessionAnnouncementAdminDto> GetAsync(
         Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<SessionAnnouncementAdminDto> SetPinnedAsync(
+        Guid id,
+        SessionAnnouncementAdminSetPinnedInput input,
         CancellationToken cancellationToken = default);
 }

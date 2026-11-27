@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.ChatObjects;
 using IczpNet.Chat.Admin.ChatObjects.Dtos;
@@ -14,6 +15,7 @@ using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.EntryNames;
 using IczpNet.Chat.EntryValues;
 using IczpNet.Chat.Enums;
+using IczpNet.Chat.MessageSections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -51,6 +53,14 @@ public class ChatAdminApplicationTestModule : AbpModule
                 context.Services.RemoveAt(i);
             }
         }
+
+        context.Services.AddTransient<IArticleScheduleAuthorization>(_ => new TestArticleScheduleAuthorization());
+    }
+
+    private sealed class TestArticleScheduleAuthorization : IArticleScheduleAuthorization
+    {
+        public Task<ClaimsPrincipal> AuthorizeAsync(Guid userId, long ownerId) =>
+            Task.FromResult(new ClaimsPrincipal());
     }
 }
 

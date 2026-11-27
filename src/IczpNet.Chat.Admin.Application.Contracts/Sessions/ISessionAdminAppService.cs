@@ -25,6 +25,11 @@ public class SessionAdminSetIsEnabledInput
     public bool IsEnabled { get; set; }
 }
 
+public class SessionAdminSetIsAllMutedInput
+{
+    public bool IsAllMuted { get; set; }
+}
+
 public class SessionAdminDto : EntityDto<Guid>
 {
     public string SessionKey { get; set; }
@@ -67,5 +72,10 @@ public interface ISessionAdminAppService : IApplicationService
     Task<SessionAdminDto> SetIsEnabledAsync(
         Guid id,
         SessionAdminSetIsEnabledInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<SessionAdminDto> SetIsAllMutedAsync(
+        Guid id,
+        SessionAdminSetIsAllMutedInput input,
         CancellationToken cancellationToken = default);
 }

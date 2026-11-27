@@ -138,6 +138,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         var sessionRequestsPermission = adminGroup.AddPermission(ChatAdminPermissions.SessionRequests.Default, L("Permission:ChatAdmin.SessionRequests"));
         sessionRequestsPermission.AddChild(ChatAdminPermissions.SessionRequests.GetList, L("Permission:ChatAdmin.SessionRequests.GetList"));
         sessionRequestsPermission.AddChild(ChatAdminPermissions.SessionRequests.GetDetail, L("Permission:ChatAdmin.SessionRequests.GetDetail"));
+        sessionRequestsPermission.AddChild(ChatAdminPermissions.SessionRequests.Handle, L("Permission:ChatAdmin.SessionRequests.Handle"));
 
         var sessionRolesPermission = adminGroup.AddPermission(ChatAdminPermissions.SessionRoles.Default, L("Permission:ChatAdmin.SessionRoles"));
         sessionRolesPermission.AddChild(ChatAdminPermissions.SessionRoles.GetList, L("Permission:ChatAdmin.SessionRoles.GetList"));
@@ -146,6 +147,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         var sessionAnnouncementsPermission = adminGroup.AddPermission(ChatAdminPermissions.SessionAnnouncements.Default, L("Permission:ChatAdmin.SessionAnnouncements"));
         sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.GetList, L("Permission:ChatAdmin.SessionAnnouncements.GetList"));
         sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.GetDetail, L("Permission:ChatAdmin.SessionAnnouncements.GetDetail"));
+        sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.Update, L("Permission:ChatAdmin.SessionAnnouncements.Update"));
     }
 
     private static LocalizableString L(string name)

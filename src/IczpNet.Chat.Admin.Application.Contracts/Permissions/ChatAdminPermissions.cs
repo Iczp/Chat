@@ -198,6 +198,7 @@ public static class ChatAdminPermissions
         public const string Default = GroupName + ".SessionRequests";
         public const string GetList = Default + ".GetList";
         public const string GetDetail = Default + ".GetDetail";
+        public const string Handle = Default + ".Handle";
     }
 
     public static class SessionRoles
@@ -212,5 +213,6 @@ public static class ChatAdminPermissions
         public const string Default = GroupName + ".SessionAnnouncements";
         public const string GetList = Default + ".GetList";
         public const string GetDetail = Default + ".GetDetail";
+        public const string Update = Default + ".Update";
     }
 }
