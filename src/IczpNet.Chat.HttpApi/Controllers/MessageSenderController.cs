@@ -22,6 +22,7 @@ using Blob = IczpNet.Chat.Blobs.Blob;
 using Microsoft.Extensions.Logging;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs.Validation;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Commands;
 using IczpNet.Chat.Hosting;
@@ -94,6 +95,33 @@ public class MessageSenderController(
         return unit;
     }
 
+    protected virtual Task ValidateUploadAsync(
+        SessionUnitCacheItem unit,
+        AttachmentMediaType mediaType,
+        string fileName,
+        string contentType,
+        string suffix,
+        byte[] bytes,
+        bool isOriginal = false,
+        bool hasSnapshot = false,
+        int? durationMs = null)
+    {
+        var validatorManager = LazyServiceProvider.LazyGetRequiredService<IAttachmentUploadValidatorManager>();
+        return validatorManager.ValidateAsync(new AttachmentUploadValidationContext
+        {
+            SessionUnit = unit,
+            MediaType = mediaType,
+            FileName = fileName,
+            ContentType = contentType,
+            Suffix = suffix,
+            FileSize = bytes?.LongLength ?? 0L,
+            DurationMs = durationMs,
+            IsOriginal = isOriginal,
+            HasSnapshot = hasSnapshot,
+            OpenReadStreamAsync = _ => Task.FromResult<Stream>(new MemoryStream(bytes ?? [], writable: false)),
+        });
+    }
+
     protected virtual Task<Blob> SavePrivateChatTempBlobAsync(
         Guid blobId,
         byte[] bytes,
@@ -152,7 +180,9 @@ public class MessageSenderController(
         var directoryName = await GetDirectoryNameAsync(blobId, "files", sessionUnit, file);
 
         var bytes = await file.GetAllBytesAsync();
-        var suffix = Path.GetExtension(file.FileName);
+        var rawExt = Path.GetExtension(file.FileName);
+        var suffix = string.IsNullOrWhiteSpace(rawExt) ? GetExtension(file.ContentType, file.FileName) : rawExt;
+        await ValidateUploadAsync(sessionUnit, AttachmentMediaType.File, file.FileName, file.ContentType, suffix, bytes);
         var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
         var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
 
@@ -258,6 +288,7 @@ public class MessageSenderController(
         var bytes = await file.GetAllBytesAsync();
 
         var suffix = GetExtension(file.ContentType, file.FileName);
+        await ValidateUploadAsync(sessionUnit, AttachmentMediaType.Image, file.FileName, file.ContentType, suffix, bytes, isOriginal: isOriginal);
 
         var filename = $"{Clock.Now:yyyyMMddhhmmss}_{ShortIdGenerator.Create()}".ToLower();
         var primaryBlobId = GuidGenerator.Create();
@@ -401,7 +432,9 @@ public class MessageSenderController(
         var directoryName = await GetDirectoryNameAsync(blobId, "audios", sessionUnit, file);
 
         var bytes = await file.GetAllBytesAsync();
-        var suffix = Path.GetExtension(file.FileName);
+        var rawExt = Path.GetExtension(file.FileName);
+        var suffix = string.IsNullOrWhiteSpace(rawExt) ? GetExtension(file.ContentType, file.FileName) : rawExt;
+        await ValidateUploadAsync(sessionUnit, AttachmentMediaType.Sound, file.FileName, file.ContentType, suffix, bytes, durationMs: duration);
         var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
         var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
 
@@ -463,7 +496,9 @@ public class MessageSenderController(
         var directoryName = await GetDirectoryNameAsync(blobId, "videos", sessionUnit, file);
 
         var bytes = await file.GetAllBytesAsync();
-        var suffix = Path.GetExtension(file.FileName);
+        var rawExt = Path.GetExtension(file.FileName);
+        var suffix = string.IsNullOrWhiteSpace(rawExt) ? GetExtension(file.ContentType, file.FileName) : rawExt;
+        await ValidateUploadAsync(sessionUnit, AttachmentMediaType.Video, file.FileName, file.ContentType, suffix, bytes, isOriginal: isOriginal, hasSnapshot: MessageSetting.VideoSetting.IsGenerateSnapshot);
         var storedFileName = await GenerateFileNameAsync(GetExtension(file.ContentType, file.FileName));
         var blobName = Path.Combine(directoryName, storedFileName).Replace(@"\", "/");
 

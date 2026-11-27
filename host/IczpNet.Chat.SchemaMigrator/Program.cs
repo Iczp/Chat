@@ -9,6 +9,7 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         if (args.Contains("--backfill-message-session-seq")) return await MessageSessionSeqBackfill.RunAsync(args);
+        if (args.Contains("--audit-legacy-public-blobs")) return await LegacyPublicBlobAuditCommand.RunAsync(args);
         if(args.Contains("--import-devices") || args.Contains("--import-app-versions"))return await DeviceImportCommand.RunAsync(args);
         var indexOnly = args.Length == 2 && args.Contains("--apply-session-seq-index") && args.Contains("--source-frozen");
         if(args.Length>0 && !indexOnly){Console.Error.WriteLine("Unknown migration mode. Import: (--import-devices | --import-app-versions) [--apply] (--host | --tenant=<guid>).");return 2;}

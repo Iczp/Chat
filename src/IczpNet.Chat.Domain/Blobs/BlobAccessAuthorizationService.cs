@@ -97,6 +97,21 @@ public class BlobAccessAuthorizationService(
             throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
         }
 
+        if (childMsgId.HasValue && childMsgId.Value != targetMessageId.Value)
+        {
+            var hasChildRef = await blobMessageRefRepository.AnyAsync(
+                x => x.BlobId == blobId && x.MessageId == childMsgId.Value,
+                cancellationToken);
+            var hasChildStructured = hasChildRef ||
+                await HasStructuredAttachmentOnMessageAsync(childMsgId.Value, blobId, cancellationToken);
+            if (!hasChildStructured)
+            {
+                throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
+            }
+
+            return blob;
+        }
+
         var hasRef = await blobMessageRefRepository.AnyAsync(
             x => x.BlobId == blobId && x.MessageId == targetMessageId.Value,
             cancellationToken);
@@ -107,8 +122,7 @@ public class BlobAccessAuthorizationService(
         }
 
         // 兼容历史消息（改造前未写 BlobMessageRef）：仅允许通过结构化附件表精确匹配绑定关系
-        var checkMessageId = childMsgId ?? targetMessageId.Value;
-        if (await HasStructuredAttachmentOnMessageAsync(checkMessageId, blobId, cancellationToken))
+        if (await HasStructuredAttachmentOnMessageAsync(targetMessageId.Value, blobId, cancellationToken))
         {
             return blob;
         }

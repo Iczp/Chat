@@ -611,6 +611,7 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
                 ["Status"] = BlobStatus.Bound,
                 ["RefCount"] = 1
             });
+            await MessageVisibilityQuery_Tests.InsertAsync<BlobMessageRef>(db, new() { ["Id"] = guidGen.Create(), ["BlobId"] = crossQuoteBlobId, ["MessageId"] = 6301L, ["SessionId"] = sessionA, ["SourceType"] = BlobRefSourceTypes.Send });
             await MessageVisibilityQuery_Tests.InsertAsync<BlobMessageRef>(db, new() { ["Id"] = guidGen.Create(), ["BlobId"] = crossQuoteBlobId, ["MessageId"] = 6303L, ["SessionId"] = sessionB, ["SourceType"] = BlobRefSourceTypes.History });
             var crossHc = new HistoryContent(crossHistContentId, "跨会话记录", "desc");
             db.Set<HistoryContent>().Add(crossHc);
@@ -925,6 +926,7 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
 
             await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionA });
             await MessageVisibilityQuery_Tests.InsertAsync<SessionUnit>(db, new() { ["Id"] = unitA, ["SessionId"] = sessionA, ["OwnerId"] = 101L });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnitSetting>(db, new() { ["SessionUnitId"] = unitA, ["SessionId"] = sessionA, ["IsEnabled"] = true });
 
             await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
             {
@@ -935,8 +937,8 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
                 ["MimeType"] = "application/pdf",
                 ["Suffix"] = ".pdf",
                 ["IsPublic"] = true,
-                ["Status"] = BlobStatus.Bound,
-                ["RefCount"] = 1,
+                ["Status"] = BlobStatus.Temp,
+                ["RefCount"] = 0,
             });
             await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
             {
@@ -988,16 +990,111 @@ public class AttachmentAuthorizationAndForwarding_Tests : ChatTestBase<Attachmen
         Assert.Equal(0, dryRunResult.PrivatizedCount);
 
         var applyResult = await auditService.AuditAndMigrateBatchAsync(dryRun: false);
+        Assert.Equal(1, applyResult.ConfirmedChatCount);
         Assert.Equal(1, applyResult.BackfilledRefCount);
         Assert.Equal(1, applyResult.PrivatizedCount);
 
         await WithUnitOfWorkAsync(async () =>
         {
             var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
-            Assert.False((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == chatLegacyBlobId)).IsPublic);
+            var updatedChatBlob = await db.Blob.AsNoTracking().SingleAsync(x => x.Id == chatLegacyBlobId);
+            Assert.False(updatedChatBlob.IsPublic);
+            Assert.Equal(BlobStatus.Bound, updatedChatBlob.Status);
+            Assert.Null(updatedChatBlob.ExpireTime);
+            Assert.Equal(1, updatedChatBlob.RefCount);
             Assert.True((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == portraitBlobId)).IsPublic);
             Assert.True((await db.Blob.AsNoTracking().SingleAsync(x => x.Id == orphanPublicChatBlobId)).IsPublic);
             Assert.True(await db.BlobMessageRef.AsNoTracking().AnyAsync(x => x.BlobId == chatLegacyBlobId && x.MessageId == 7001L));
+        });
+
+        // Re-running audit must be strictly idempotent
+        var rerunResult = await auditService.AuditAndMigrateBatchAsync(dryRun: false);
+        Assert.Equal(0, rerunResult.ConfirmedChatCount);
+        Assert.Equal(0, rerunResult.BackfilledRefCount);
+        Assert.Equal(0, rerunResult.PrivatizedCount);
+    }
+
+    [Fact]
+    public async Task RootMessage_and_ChildMessage_authorization_rejects_mismatched_sibling_blob()
+    {
+        var guidGen = ServiceProvider.GetRequiredService<IGuidGenerator>();
+        var authService = ServiceProvider.GetRequiredService<IBlobAccessAuthorizationService>();
+
+        var sessionA = guidGen.Create();
+        var unitA = guidGen.Create();
+        var blob1Id = guidGen.Create();
+        var blob2Id = guidGen.Create();
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var db = await ServiceProvider.GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await MessageVisibilityQuery_Tests.InsertAsync<Session>(db, new() { ["Id"] = sessionA });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnit>(db, new() { ["Id"] = unitA, ["SessionId"] = sessionA, ["OwnerId"] = 101L });
+            await MessageVisibilityQuery_Tests.InsertAsync<SessionUnitSetting>(db, new() { ["SessionUnitId"] = unitA, ["SessionId"] = sessionA, ["IsEnabled"] = true });
+
+            foreach (var bId in new[] { blob1Id, blob2Id })
+            {
+                await MessageVisibilityQuery_Tests.InsertAsync<Blob>(db, new()
+                {
+                    ["Id"] = bId,
+                    ["Container"] = "chat-files",
+                    ["Name"] = $"2026/11/{bId:N}.png",
+                    ["FileName"] = $"{bId:N}.png",
+                    ["MimeType"] = "image/png",
+                    ["IsPublic"] = false,
+                    ["Status"] = BlobStatus.Bound,
+                    ["RefCount"] = 2,
+                });
+            }
+
+            foreach (var (mid, type) in new[] { (7101L, MessageTypes.Image), (7102L, MessageTypes.Image), (7103L, MessageTypes.History) })
+            {
+                await MessageVisibilityQuery_Tests.InsertAsync<Message>(db, new()
+                {
+                    ["Id"] = mid,
+                    ["SessionId"] = sessionA,
+                    ["SessionSeq"] = mid - 7100L,
+                    ["SenderId"] = 101L,
+                    ["SenderSessionUnitId"] = unitA,
+                    ["MessageType"] = type,
+                    ["ExtraProperties"] = new ExtraPropertyDictionary(),
+                });
+            }
+
+            var ic1 = new ImageContent { BlobId = blob1Id, Url = $"/api/chat/file/{blob1Id}" };
+            SetProp(ic1, nameof(ImageContent.Id), guidGen.Create());
+            var ic2 = new ImageContent { BlobId = blob2Id, Url = $"/api/chat/file/{blob2Id}" };
+            SetProp(ic2, nameof(ImageContent.Id), guidGen.Create());
+            db.Set<ImageContent>().AddRange(ic1, ic2);
+            (await db.Message.SingleAsync(x => x.Id == 7101L)).ImageContentList.Add(ic1);
+            (await db.Message.SingleAsync(x => x.Id == 7102L)).ImageContentList.Add(ic2);
+
+            var hc = new HistoryContent(guidGen.Create(), "Pair", "Pair");
+            db.Set<HistoryContent>().Add(hc);
+            (await db.Message.SingleAsync(x => x.Id == 7103L)).HistoryContentList.Add(hc);
+            db.Set<HistoryMessage>().AddRange(
+                new HistoryMessage(hc, await db.Message.SingleAsync(x => x.Id == 7101L)),
+                new HistoryMessage(hc, await db.Message.SingleAsync(x => x.Id == 7102L)));
+
+            db.BlobMessageRef.AddRange(
+                new BlobMessageRef(guidGen.Create(), blob1Id, 7101L, sessionA, BlobRefSourceTypes.Send),
+                new BlobMessageRef(guidGen.Create(), blob2Id, 7102L, sessionA, BlobRefSourceTypes.Send),
+                new BlobMessageRef(guidGen.Create(), blob1Id, 7103L, sessionA, BlobRefSourceTypes.History),
+                new BlobMessageRef(guidGen.Create(), blob2Id, 7103L, sessionA, BlobRefSourceTypes.History));
+            await db.SaveChangesAsync();
+        });
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            // Valid child1 + blob1 under root 7103 succeeds
+            var ok = await authService.CheckAccessAsync(blob1Id, unitA, 7101L, 7103L, [101L], hasValidSignature: true);
+            Assert.NotNull(ok);
+
+            // Swapped child2 + blob1 under same root 7103 MUST fail
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                authService.CheckAccessAsync(blob1Id, unitA, 7102L, 7103L, [101L], hasValidSignature: true));
         });
     }
 }

@@ -1,4 +1,5 @@
 using IczpNet.Chat.Blobs;
+using IczpNet.Chat.Blobs.Validation;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.Controllers;
 using IczpNet.Chat.Medias;
@@ -16,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Authorization;
@@ -82,10 +84,15 @@ public class MessageSenderUploadAuthorization_Tests
         var shortIdGen = Substitute.For<IShortIdGenerator>();
         shortIdGen.Create().Returns("abc12345");
 
+        var validatorManager = Substitute.For<IAttachmentUploadValidatorManager>();
+        validatorManager.ValidateAsync(Arg.Any<AttachmentUploadValidationContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
         var lazy = Substitute.For<IAbpLazyServiceProvider>();
         lazy.LazyGetRequiredService<ICurrentUser>().Returns(currentUser);
         lazy.LazyGetRequiredService<IChatObjectManager>().Returns(chatObjectManager);
         lazy.LazyGetRequiredService<Microsoft.Extensions.Options.IOptions<AttachmentUploadOptions>>().Returns(uploadOptions);
+        lazy.LazyGetRequiredService<IAttachmentUploadValidatorManager>().Returns(validatorManager);
         lazy.LazyGetRequiredService<IBlobManager>().Returns(blobManager);
         lazy.LazyGetRequiredService<IBlobResolver>().Returns(blobResolver);
         lazy.LazyGetRequiredService<IClock>().Returns(clock);
@@ -148,5 +155,14 @@ public class MessageSenderUploadAuthorization_Tests
         var (disabledCtrl, _, _) = CreateController(userId, [101L], disabledUnit);
         await Assert.ThrowsAsync<BusinessException>(() =>
             disabledCtrl.SendUploadFileAsync(suId, CreateFormFile("doc.pdf", "application/pdf", [1, 2, 3]), 0, []));
+
+        // 5. Blocked extension rejected via real AttachmentSizeAndExtensionValidator
+        var blockedCtrl = CreateController(userId, [101L], unit).Controller;
+        var realValidator = new AttachmentUploadValidatorManager(
+            [new AttachmentSizeAndExtensionValidator(Microsoft.Extensions.Options.Options.Create(new AttachmentUploadOptions()))]);
+        var lazyProvider = blockedCtrl.LazyServiceProvider;
+        lazyProvider.LazyGetRequiredService<IAttachmentUploadValidatorManager>().Returns(realValidator);
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            blockedCtrl.SendUploadFileAsync(suId, CreateFormFile("payload.exe", "application/octet-stream", [0x4D, 0x5A]), 0, []));
     }
 }

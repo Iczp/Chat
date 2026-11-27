@@ -1,8 +1,58 @@
 # 消息附件生产评估与修复计划
 
-评估日期为 2026-11-27。基准为 IczpNet.Chat `6dc3229c`、Flutter `17bbfd5`、Electron `2fb85f8`。部署拓扑参照 Rctea.IM 的 Chat API、Chat Worker 和 SchemaMigrator 配置。范围覆盖物理文件去重、按身份签发逻辑附件凭证、按消息授权下载，以及普通转发、聊天记录、异步 GIF 和客户端缓存。
+评估日期为 2026-11-27。前序复查基准为 IczpNet.Chat `da66290d`（配置 `a0812a19`、部署 `3340c3d`）、Electron `8c5767c`、Flutter `c395cac`。部署拓扑参照 Rctea.IM 的 Chat API、Chat Worker 和 SchemaMigrator 配置。范围覆盖物理文件去重、按身份签发逻辑附件凭证、按消息授权下载，以及普通转发、聊天记录、异步 GIF 和客户端缓存。
 
-**发布结论：暂未达到生产发布标准。** 核心方案可沿用。当前代码已有共享物理对象、独立逻辑附件和消息引用，常规上传及转发路径基本齐备。优先关闭私有媒体的下载与缓存授权缺口，再补齐长期运行和故障恢复验证。生产多实例、实际 SQL Server 与 MinIO、客户端打包联调均为放量门槛。
+**发布结论：三端 P1 代码修复与本地自动化验证已完成，暂未达到直接放量生产标准。** 当前核心阻塞已从“客户端/服务端 P1 授权缺口”收敛为：
+1. `Chat_Module_v3` 仅完成了历史公开附件 `--dry-run` 盘点，尚未执行备份后的 `--apply` 实写迁移，且 2,448 条未关联活跃消息的公开 `chat-files` 仍待按历史用途处置；
+2. 需用本轮后端代码重新打包/发布 `chat-api` 与 `chat-worker` 容器镜像，并在目标预生产环境完成真实登录态 JWT 三端联调、Windows NSIS 实际升级、macOS/Android/iOS 打包签名与双实例并发故障注入验收。
+
+## 2026-11-27 P1 修复与验证结论
+
+本轮按 **后端 → Electron → Flutter** 顺序完成全部 P1 发布前修复，未改动业务表结构：
+
+| 阶段 | 已完成修复 | 最新验证结果 | 剩余未闭环项 |
+| --- | --- | --- | --- |
+| 后端（基于 `da66290d`） | `LegacyPublicBlobAuditService` 改为写事务内 `.AsNoTracking()` 重检并幂等调用 `BindBlobsToMessageAsync` 同步 `RefCount/Status/ExpireTime`；在 `SchemaMigrator` 接入 `--audit-legacy-public-blobs`（含 `sp_getapplock`）；`BlobAccessAuthorizationService` 强制校验 `(childMsgId, blobId)` 真实归属；`BlobAppService` 禁止经由 CRUD 将聊天附件公开或直接删除受保护对象；`MessageSenderController` 旧上传入口全量接入 `IAttachmentUploadValidatorManager`。 | `SchemaMigrator`、`BackgroundWorker`、`HttpApi.Host` 全部 **0 警告 0 错误** 构建通过；定向单测 **32 项全部通过**（Application `10/10`、EF Core `14/14`、Domain `8/8`）；真实库 `Chat_Module_v3` `--dry-run` 7 批扫完：`Candidates=3145`、`ConfirmedChat=318`、`MissingRefs=320`、`Unclassified=2827`。 | 尚未执行备份后的 `--apply` 实写与旧客户端兼容实测；2,448 条未关联公开 `chat-files` 仍需确认用途；本地运行中的 Docker `chat-api` / `chat-worker` 镜像尚未按新代码重新发布；P2 项与 Vben 管理页待继续推进。 |
+| Electron（基于 `8c5767c`） | 在线签权短缓存收紧至 **5 秒**（`AUTH_VERDICT_CACHE_TTL_MS = 5_000`）；`cacheDir` 私有缓存不再写入原始路径白名单并显式拦截 `?path=` 直读；协议解析缺失调用窗口默认拒绝，仅协议层经 `isWindowAlive(grant.webContentsId, activeAccount)` 核验存活与当前账号后放行；`preload` 新增绑定可信 `event.sender.id` 的 `authorizeLocalMedia`；复制图片、另存为与定位文件传 `bypassVerdictCache: true`；撤回/删消息/状态恢复即时触发 `invalidateMessageAccess`。 | `pnpm run typecheck`（node + web）通过；`pnpm exec vitest run test/unit test/integration` **68 个测试文件、335 项测试全部通过**。 | 尚待用真实打包安装包完成 `v0.1.0 -> v0.1.1` NSIS 安装/升级、多账号同会话真实 JWT 联调及有 Apple 凭证环境下的 macOS 签名公证。 |
+| Flutter（基于 `c395cac`） | `AttachmentTransferService` 将在线结论短缓存收紧至 **5 秒**，新增 `accessRevision`、`isProtectedChatAttachmentUrl` 与单次去重的 `forceVerifyOnline`（`open`/`saveAs` 对私有 `/api/chat/file/{blobId}` 强制在线重验并失败清理字节）；新增 `AuthorizedPrivateAttachmentGate` 接入 `ImageMessageContent` 与 `VideoMessageContent`，渲染本地缓存图/封面/GIF 前强检撤回/删除与在线鉴权并随 `accessRevision` 即时撤销；`HistoryMessageContent` 补全详情弹窗（子文本/图/视频/文件/语音/嵌套转发），将查看者 `sessionUnitId`、子消息 `serverId` 与外层可见 `rootMessageId`（同步透传 `VoiceMessageContent`）贯穿预览与传输。 | `flutter analyze --no-pub` 覆盖改动文件 **0 问题**；6 个附件与媒体相关测试文件共 **26 项测试全部通过**（含新增 UI 门禁、强制重验与 History 详情 `rootMsg` 传参用例）。 | 待在预生产/测试环境运行真实登录态 JWT 的桌面与移动端回归、多端撤回实时 Push 验证与大工程全量构建发布。 |
+| Vben 管理端 | 后端 `BlobAppService` 写保护门槛已补齐。 | 已含在 `BlobAppServiceProtection_Tests` 定向验证中。 | Vben 管理界面与管理专用 API/预检审计仍在后续独立交付范围。 [附件管理方案](MESSAGE-ATTACHMENT-VBEN-ADMIN-PLAN.md) |
+
+### 已复核的配置、测试和产物（本轮最新实测）
+
+- **真实库只读盘点（`Chat_Module_v3`）**：执行 `dotnet run --no-build --project host/IczpNet.Chat.SchemaMigrator/IczpNet.Chat.SchemaMigrator.csproj -- --audit-legacy-public-blobs --dry-run --batch-size=500` 返回退出码 `0`（7 批扫描无异常，未修改业务行）。指标较前次确认一致：`Candidates=3,145`（`ConfirmedChat=318`、`MissingRefs=320`、`Unclassified=2,827`；其中历史盘点分类含未关联活跃消息的公开 `chat-files` `2,448` 与其他容器 `379`，且公开 Temp 带到期时间为 `0`）。
+- **本轮代码变更后的实际命令验证汇总**：
+  - 后端构建：`IczpNet.Chat.SchemaMigrator`、`IczpNet.Chat.BackgroundWorker`、`IczpNet.Chat.HttpApi.Host` 均构建成功（0 错误）。
+  - 后端定向测试：
+    - `IczpNet.Chat.Application.Tests`（`AttachmentReuse_Tests|FileControllerAuthorization_Tests|MessageSenderUploadAuthorization_Tests|BlobAppServiceProtection_Tests`）：**10 通过，0 失败，0 跳过**；
+    - `IczpNet.Chat.EntityFrameworkCore.Tests`（`AttachmentAuthorizationAndForwarding_Tests|BlobDeduplication_Tests`，SQLite 内存库）：**14 通过，0 失败，0 跳过**；
+    - `IczpNet.Chat.Domain.Tests`（`MessageIdempotency_Tests|MessageVisibility_Tests`）：**8 通过，0 失败，0 跳过**。
+  - Electron：`pnpm run typecheck` + `pnpm exec vitest run test/unit test/integration`：**68 文件 335 项测试通过（0 失败）**（含 `media-cache-service.test.ts` 与 `shell-ipc-security.test.ts` 新增的 5 秒 TTL、原始路径拦截、窗口句柄校验及导出绕过缓存防护断言）。
+  - Flutter：`flutter analyze --no-pub` 改动范围 0 issue；`flutter test --no-pub` 执行 `attachment_cache_key_test.dart`、`attachment_reuse_client_test.dart`、`attachment_local_reuse_test.dart`、`core/image_offline_cache_test.dart`、`chat_media_layout_test.dart` 与 `core/attachment_private_ui_gate_test.dart`：**26 项全部通过（0 失败）**。
+- **生产密钥与容器状态提醒**：`Chat Worker` 与 `Chat API` 仓库配置中仍保留开发测试 `CHAT_ATTACHMENT_SIGNING_KEY` 默认值（900 秒），上线前须确保通过机密管理显式注入并取消生产默认回退；如测试密钥曾外泄须轮换。此外，本轮修改后 `deploy/` 中 `chat-api` / `chat-worker` Docker 镜像尚未重建推送。
+
+### 历史公开附件盘点（前次细项 + 本轮 `SchemaMigrator` 复核一致）
+
+以下为部署方的同口径只读结果。统计关系已核对，数据库记录及实写尚待操作方验证。
+
+| 指标 | 结果 |
+| --- | ---: |
+| 有效 Blob | 5,431 |
+| 公开候选 | 3,145 |
+| 已关联活跃消息结构化字段的公开聊天附件 | 318 |
+| 上述附件缺失的消息引用 | 320 |
+| 未归类 | 2,827 |
+| 未关联活跃消息的公开 `chat-files` | 2,448 |
+| 其他容器 | 379 |
+| 公开 Temp 且有到期时间 | 0 |
+
+其他容器包括 `chat-object-portraits` 236 条、`user-portraits` 89 条、`resized` 54 条。公开历史附件当前没有到期时间，所以这批记录不会被按过期 Temp 的查询认领。**未关联活跃消息只表示盘点当前未找到结构化关联。** 2,448 条记录须继续核对旧客户端引用、公开用途和保留期，再决定迁移、归档或回收。318 条确认记录先修正迁移写入逻辑，再小批试跑，核对补引用、状态、计数，以及旧客户端登录态访问结果。
+
+### 下一轮放量门槛
+
+1. 后端关闭旧 CRUD 对聊天私有附件的公开化与直接删除能力。补齐审计命令入口，回填和私有化同事务提交，验证状态、计数、重试和旧客户端兼容。下载和签名对指定的子消息与 Blob 关系做精确判断。
+2. Electron 仅通过带账号、可信窗口、消息上下文和时效的授权读取私有本地缓存。Flutter 将图片、视频封面和 History 中的查看、播放及保存收口到同一检查。两个客户端验收撤回、失权和切换账号后重新打开。
+3. 以真实登录态 JWT 完成同账号双身份、异账号、嵌套 History 和多级转发的跨端联调。补 HTTP 级并发兑换、真实 GIF 传播和同一 Blob 的到期边界测试。
+4. 完成 Windows NSIS 实际安装升级。macOS、Android、iOS 按本次发布目标完成对应平台构建和适用的签名／公证。Vben 的管理写操作须另外通过预检、并发及审计验收。
 
 ## 三条链路的评估
 
@@ -10,52 +60,39 @@
 | --- | --- | --- |
 | 物理文件去重 | 服务端 SHA-256，隔离域和容器内的活跃唯一约束，版本化对象键，旧附件读取兼容。过期逻辑附件已改为数据库条件认领，物理对象计数与逻辑附件在事务路径内提交，Worker 已补扫无实际引用的 Ready 对象。 | **有条件通过代码评估。** 普通上传入口、回收失败和灰度开关仍需验证。 |
 | 上传凭证按身份隔离 | 同账号兑换凭证经服务端验证后，按目标 SessionUnit 签发独立逻辑 Blob。数据库已有兑换唯一键和冲突后重读，Flutter 和 Electron 均已接入兑换。 | **主流程可用。** 历史无归属 Blob、Flutter 业务入口的幂等键以及派生参数匹配仍存在缺口。 |
-| 下载按消息授权 | 服务端已按 BlobMessageRef、消息可见性和结构化历史字段校验，跨会话聊天记录改为逐跳验证。Electron 已按来源发送令牌，缓存已有消息授权入口。 | **未通过。** 旧发附件入口仍可公开存储，Electron 与 Flutter 的缓存命中仍存在绕开消息授权的路径。 |
+| 下载按消息授权 | 服务端已按 BlobMessageRef、消息可见性和结构化历史字段校验，跨会话聊天记录改为逐跳验证。Electron 已按来源发送令牌，缓存已有消息授权入口。 | **未通过。** 旧发送上传已改为私有，历史公开数据、通用 Blob 管理写入口，以及客户端缓存与本地路径仍有权限缺口。 |
 
 后端上轮的两个并发问题已有实质整改。回收用 SQL 条件更新决定是否能删除过期 Temp，物理引用增量也移至逻辑写入所在工作单元。GIF 生成结果改为在业务事务内登记外箱，Chat Worker 定时处理。Electron 原有远程媒体 Bearer 发送问题已按 API 同源限制，并逐跳处理重定向。Flutter 先前缺失的同步进度文件已进入当前提交树。 [临时附件认领](../../src/IczpNet.Chat.EntityFrameworkCore/Repositories/MessageRepository.cs#L783) · [物理引用写入](../../src/IczpNet.Chat.Domain/Blobs/BlobManager.cs#L185) · [GIF 外箱写入](../../src/IczpNet.Chat.Domain/Blobs/GenerateVideoGifBackgroundJob.cs#L207)
 
-## P1 发布前修复
+## P1 发布前修复状态（已完成代码修复与单测/集成验证）
 
-### P1-01 旧聊天上传入口仍可创建绕过消息授权的附件
+### P1-01 旧聊天附件和通用 Blob 写入口保护与历史回填（已修复待库实写）
 
-`MessageSenderController` 中仍有写入 `IsPublic = true` 的聊天附件路径。下游授权服务遇到公开 Blob 会直接允许下载。普通发送的归属校验仅在 Blob 有上传者字段时拒绝其他身份，历史无归属附件没有明确的用途约束。生产功能需要明确区分聊天私有附件与头像等公开资源。 [旧发送入口](../../src/IczpNet.Chat.HttpApi/Controllers/MessageSenderController.cs#L200) · [公开下载分支](../../src/IczpNet.Chat.Domain/Blobs/BlobAccessAuthorizationService.cs#L47) · [发送归属校验](../../src/IczpNet.Chat.Domain/MessageSections/Messages/MessageManager.Attachments.cs#L122)
+- **已落地修复**：[LegacyPublicBlobAuditService.cs](../../src/IczpNet.Chat.Domain/Blobs/LegacyPublicBlobAuditService.cs) 在写入事务内基于 `.AsNoTracking()` 重新确认活跃消息关联并幂等调用 `IMessageRepository.BindBlobsToMessageAsync(..., markAsBound: true)`，同步更新 `IsPublic = false`、`Status = BlobStatus.Bound`、`ExpireTime = null` 与 `RefCount`；[LegacyPublicBlobAuditCommand.cs](../../host/IczpNet.Chat.SchemaMigrator/LegacyPublicBlobAuditCommand.cs) 与 `Program.cs` 接入 `--audit-legacy-public-blobs [--dry-run | --apply]` 与分布式应用锁；[BlobAccessAuthorizationService.cs](../../src/IczpNet.Chat.Domain/Blobs/BlobAccessAuthorizationService.cs) 对传入 `rootMessageId` + `childMessageId` 强制核对 `BlobId` 是否确实隶属目标 `childMessageId`；[BlobAppService.cs](../../src/IczpNet.Chat.Application/Blobs/BlobAppService.cs) 封堵聊天/绑定/引用/共用存储对象 Blob 的公开化及直接 CRUD 删除；[MessageSenderController.cs](../../src/IczpNet.Chat.HttpApi/Controllers/MessageSenderController.cs) 的 4 条旧文件发送上传端点均统一接入 `IAttachmentUploadValidatorManager`。
+- **仍待验收**：在 `Chat_Module_v3` 备份后执行 `--audit-legacy-public-blobs --apply`，评估并处置 2,448 条无活跃消息结构化引用的公开 `chat-files`，并重建部署 `chat-api` / `chat-worker` 镜像。
 
-**修复**　让旧聊天上传路由也创建带明确上传者、角色和生命周期的私有附件。对历史公开聊天附件按实际消息用途分批迁移，保留单独审核过的公开资源用途。普通发送严格校验当前上传凭证及主附件和衍生件的归属。聊天记录和普通转发沿用已授权的消息路径。
+### P1-02 Electron 在线缓存校验、5 秒撤回窗口与本地句柄收口（已修复待端到端联调）
 
-**验收**　旧客户端发送后，目标可见成员可正常下载，脱离消息上下文且没有授权的访问被拒绝。头像等公开资源继续按已有约定提供。覆盖同账号多身份、不同账号、私密消息和历史无归属 Blob。
+- **已落地修复**：[MediaCacheService.ts](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts) 将 `AUTH_VERDICT_CACHE_TTL_MS` 收紧至 `5_000` ms；从 `ensureRemoteCached` 与 `authorizeLocalMedia` 移除所有私有缓存目录原始路径放行，并禁止 `cacheDir` 内路径通过 `?path=` 原始路径白名单；`resolveAuthorizedLocalRequest` 对缺少可信 `webContentsId` 的请求默认 fail-closed（仅在协议层经 `isWindowAlive(grant.webContentsId, activeAccount)` 验证窗口存活且当前账号一致时放行）；[registerShellIpc.ts](F:/Dev/GotoIM/gotoim-electron/src/main/windows/registerShellIpc.ts) 复制图片/另存为/定位文件均传 `bypassVerdictCache: true` 强制在线重验；[MessageLocalService.ts](F:/Dev/GotoIM/gotoim-electron/src/main/modules/messages/MessageLocalService.ts) 接入 `invalidateMessageAccess` 随撤回、删除与状态恢复即时撤销访问凭证。
+- **仍待验收**：已打包客户端的多账号同会话、视频 Range 拖动与真机撤回实时联调。
 
-### P1-02 Electron 私有缓存校验未验证 Blob 与消息的关系
+### P1-03 Electron 聊天记录与媒体导出控制（已接入统一入口）
 
-Main 中的 `authorizeCachedBlob` 回调只确认 SQLite 里存在目标消息及其三个状态，未使用收到的 `blobId`，也未核对聊天记录根、子消息和附件之间的关系。缺少完整上下文时，`ensureRemoteCached` 可以直接命中私有缓存。同账号、同 Blob 的合并下载也共用 Promise，等待者未单独完成授权。缓存归一化已解决重复磁盘存储，授权上下文仍需独立判断。 [Main 授权回调](F:/Dev/GotoIM/gotoim-electron/src/main/index.ts:301) · [缓存与合并下载](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts:1025)
+- P1 要求的原始路径清理、句柄与 `AUTHORIZE_LOCAL_MEDIA` 通道、复制/导出在线强制重验已在上述修改中闭环；P2 涉及的嵌套聊天记录媒体类型全量渲染持续跟踪。
 
-**修复**　使用统一的主进程附件策略，校验账号、服务来源、身份和消息上下文、Blob 之间的完整关系。旧 URL 缺少消息上下文时交服务端按兼容规则验证。并行请求可以共享字节传输及磁盘文件，每个请求须先取得自己的访问结论。离线授权应明确时效、撤回与个人删除的处理，以及状态过期后的行为。
+### P1-04 Flutter 图片/视频封面/History 详情统一授权上下文（已修复待真机回归）
 
-**验收**　相同 Blob 在不同消息、身份和嵌套聊天记录上下文中并发访问时，每个请求独立裁决。撤回、个人删除、登出和切号后，缓存命中遵循约定。
-
-### P1-03 Electron 的本地路径、导出和复制绕过统一缓存授权
-
-本地协议虽新增账户绑定的短期句柄，但现有 Renderer 仍构造带路径的 URL，主进程把整个媒体缓存根目录视为允许读取。该目录存储多个账号的文件。另存为与复制图片也有直接查磁盘缓存的分支。句柄记录的窗口 ID 目前未在解析时验证。 [本地 URL](F:/Dev/GotoIM/gotoim-electron/src/renderer/src/common/utils/mediaUrl.ts:28) · [本地文件判定](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts:670) · [另存为入口](F:/Dev/GotoIM/gotoim-electron/src/main/windows/registerShellIpc.ts:459)
-
-**修复**　所有私有预览、Range、另存为与复制统一经过 Main 的附件访问入口。以受信窗口和账号签发、解析本地句柄，并校验实际文件的账号归属。原始路径兼容只允许已授权的具体文件。登出和切号时撤销句柄并终止旧下载，避免暴露完整缓存目录。
-
-**验收**　跨账号缓存文件、过期句柄、错误窗口、预览后撤回、旧本地路径均按权限处理。正常文件预览、复制和视频拖动进度继续可用。
-
-### P1-04 Flutter 私有缓存缺少消息授权上下文
-
-`findCachedPath` 可以在网络请求前返回内存或磁盘路径。已核对的缓存入口没有消息授权结果输入，业务附件链接也尚未串接 `su`、`msg`、`rootMsg`。图片和视频部分仍使用单独的渲染缓存。服务端按消息授权只能约束实际发出的网络请求。 [缓存直返](F:/Dev/GotoIM/gotoim-flutter/lib/core/services/file/attachment_transfer_service.dart:102) · [图片渲染](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/presentation/message_content/image_message_content.dart:63)
-
-**修复**　给下载、预览、缓存、另存为补齐统一访问上下文和同一套在线／离线授权规则。Flutter 账号切换、登出和消息撤回应触发状态及相应缓存访问凭证失效。流媒体和缩略图同样校验。
-
-**验收**　在桌面端和移动端分别验证账号切换、已缓存附件的撤回与个人删除、聊天记录跨会话下载、离线恢复和重新登录。
+- **已落地修复**：[attachment_transfer_service.dart](F:/Dev/GotoIM/gotoim-flutter/lib/core/services/file/attachment_transfer_service.dart) 将 `_authorizedVerdicts` 收紧至 5 秒并增加单次去重的 `forceVerifyOnline`、`isProtectedChatAttachmentUrl` 与 `accessRevision`；新增 [authorized_private_attachment_gate.dart](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/presentation/message_content/authorized_private_attachment_gate.dart) 并接入 [image_message_content.dart](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/presentation/message_content/image_message_content.dart) 与 [video_message_content.dart](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/presentation/message_content/video_message_content.dart)，阻止本地缓存/缩略图绕过校验并随撤回/删除即时收回界面渲染与预览点击；[history_message_content.dart](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/presentation/message_content/history_message_content.dart) 补全可点击详情弹窗并向子图片/视频/文件/语音/嵌套 History 透传查看者 `su`、子 `msg` 与外层可见 `rootMsg`。
+- **仍待验收**：以真实 JWT 完成桌面与移动端全流程实测回归。
 
 ## P2 生产加固与运维
 
 | 项目 | 当前缺口与修复建议 |
 | --- | --- |
-| Flutter 兑换幂等 | 底层 `uploadAttachment` 支持 `ClientUploadId`，业务入口 `sendUploadFile` 未传入该值，发送失败重试时无法稳定命中持久化兑换记录。将本地发送操作的稳定 ID 持久化并向下传递，同一次请求保留相同的源附件和参数。现有 Flutter 单测直接调用底层方法，另补业务入口测试。 [业务入口](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/data/datasources/message_api.dart:493) |
+| Flutter 兑换幂等 | Flutter 已把 `local.clientMessageId` 传入 `sendUploadFile` 及发送接口。仍需将兑换的过期回退与权限、参数冲突区分，验证进程重启后同一次操作保持源附件及参数。 [业务入口](F:/Dev/GotoIM/gotoim-flutter/lib/features/chat/data/datasources/message_api.dart:493) |
 | 物理对象异常恢复 | 旧版 Temp 的物理删除失败后只有日志，已经软删除的逻辑记录不会重新出现在普通扫描中。上传接管 `Deleting` 对象会替换旧键，旧键清理也是尽力执行。将旧键与失败删除记录持久化，回收任务分批重试，并对 SQL Server 下普通上传与兑换的事务边界做故障注入。 [旧对象清理](../../src/IczpNet.Chat.Domain/Blobs/TempBlobCleanupService.cs#L58) · [替换旧键](../../src/IczpNet.Chat.Domain/Blobs/BlobManager.cs#L170) |
-| 灰度和运行配置 | `EnablePhysicalDeduplication` 默认开启，显式复用已有 `StorageObjectId` 的分支先于开关判断。部署时需要明确各开关是停止普通对象去重、停止新共享引用，还是关闭兑换。签名密钥应在每个服务启动时验证。GIF 外箱由专用 Chat Worker 注册，生产健康检查应验证实际 Worker 实例及消费进度。 [存储分支](../../src/IczpNet.Chat.Domain/Blobs/BlobManager.cs#L66) · [签名配置](../../src/IczpNet.Chat.Domain/ChatDomainModule.cs#L55) · [外箱 Worker 注册](../../host/IczpNet.Chat.BackgroundWorker/ChatBackgroundWorkerModule.cs#L56) |
-| 附件日志和直链 | Electron 记录完整远程媒体 URL，现有日志脱敏规则识别 `signature` 等名称，但未覆盖 Chat 的 `sig`。记录授权结果、来源和耗时即可。MinIO 预签名 URL 的撤回窗口应与业务规则一致，需要即时撤回的资源通过每次请求都执行授权的入口。 [媒体日志](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts:1107) · [日志脱敏](F:/Dev/GotoIM/gotoim-electron/src/main/logging/AppLogger.ts:55) · [服务端直链](../../src/IczpNet.Chat.HttpApi/Controllers/FileController.cs#L84) |
+| 灰度和运行配置 | 已增加独立兑换开关和私有直链开关，兑换按去重开关决定是否沿用 `StorageObjectId`。启动签名校验已接入。发布前仍要检查目标环境的生产密钥注入与开关状态。GIF 外箱由专用 Chat Worker 注册，生产健康检查应验证实际 Worker 实例及消费进度。 [存储分支](../../src/IczpNet.Chat.Domain/Blobs/BlobManager.cs#L66) · [签名配置](../../src/IczpNet.Chat.Domain/ChatDomainModule.cs#L55) · [外箱 Worker 注册](../../host/IczpNet.Chat.BackgroundWorker/ChatBackgroundWorkerModule.cs#L56) |
+| 附件日志和直链 | Electron 已补 `sig` 脱敏。服务端私有预签名直链默认关闭。若生产启用直链，应确认有效期符合撤回要求，并验证日志和响应不会公开非必要的签名参数。 [媒体日志](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts:1107) · [日志脱敏](F:/Dev/GotoIM/gotoim-electron/src/main/logging/AppLogger.ts:55) · [服务端直链](../../src/IczpNet.Chat.HttpApi/Controllers/FileController.cs#L84) |
 | 派生参数与清理保留期 | 上传复用需要按视频封面、原图、版本等会改变产物的参数隔离。兑换记录与 GIF 外箱应配置保留和按索引分批清理，并监控缓存命中、孤儿、积压及失败。撤回和个人删除以消息可见性为准，物理回收仍须核对所有有效引用。 |
 | 大附件负载 | 服务端普通上传仍有全量字节缓冲，Electron 缓存未命中会读取完整响应并同步写盘，查找时同步遍历目录。为最大允许文件和并发下载设置内存与 Main 线程延迟目标，验证后按需改为流式校验、落盘和索引查找。 [原文件上传](../../src/IczpNet.Chat.HttpApi/Controllers/AttachmentController.cs#L721) · [Electron 缓存](F:/Dev/GotoIM/gotoim-electron/src/main/services/MediaCacheService.ts:1107) |
 
@@ -109,9 +146,9 @@ Vben 管理能力并入本次工作。第一阶段同步交付管理 API 和保�
 3. **变更门槛**　在目标拓扑的预生产数据库验证 `AddBlobObjectDedup → FilterActiveBlobObjectUniqueIndex → AddBlobReuseRecord → AddVideoGifPropagationOutbox`，核对真实迁移历史和已存对象。过滤索引已经允许历史软删除行共存，回退到无过滤唯一索引前需检查重复历史键。应用回退期间保留共享对象兼容读取和新版回收能力。
 4. **发布顺序**　先部署通过第一阶段验证的迁移、兼容 API 与 Chat Worker，核对健康检查。按 Electron、Flutter 的顺序验证并发布兼容客户端，完成三端验收再开启严格策略并扩大范围。放量前灰度验证跨身份的同一文件只存一份物理内容且各自持有逻辑凭证。以下载 403/404、对象未找到、外箱积压、孤儿量及附件请求延迟作为继续放量的依据。
 
-## 本次验证
+## 上一轮自动化验证基线
 
-本次复核了上述提交和部署入口，未应用迁移或修改业务代码。后端使用定向测试，Flutter 和 Electron 使用附件相关测试。预生产环境的三端联调、多实例故障注入、迁移演练及安装包验收仍待执行。
+以下为 6dc3229c、17bbfd5 和 2fb85f8 的上一轮结果。当前版本的复查证据见文首。
 
 | 仓库 | 实测 |
 | --- | --- |
