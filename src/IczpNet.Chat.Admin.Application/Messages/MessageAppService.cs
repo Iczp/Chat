@@ -9,6 +9,7 @@ using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
@@ -24,6 +25,82 @@ public class MessageAppService(IMessageAdminManager messageAdminManager)
     : ApplicationService, IMessageAdminAppService
 {
     protected IMessageAdminManager MessageAdminManager { get; } = messageAdminManager;
+
+    [Authorize(ChatAdminPermissions.Messages.GetList)]
+    public virtual async Task<PagedResultDto<MessageAdminListItemDto>> GetListAsync(
+        MessageAdminGetListInput input,
+        CancellationToken cancellationToken = default)
+    {
+        input ??= new MessageAdminGetListInput();
+
+        var result = await MessageAdminManager.GetAdminListAsync(
+            input.SessionId,
+            input.SenderId,
+            input.ReceiverId,
+            input.MessageType,
+            input.IsRollbacked,
+            input.IsPrivate,
+            input.MaxMessageId,
+            input.StartTime,
+            input.EndTime,
+            input.SkipCount,
+            input.MaxResultCount,
+            cancellationToken);
+
+        return new PagedResultDto<MessageAdminListItemDto>(
+            result.TotalCount,
+            result.Items.Select(MapToListItemDto).ToList());
+    }
+
+    [Authorize(ChatAdminPermissions.Messages.GetDetail)]
+    public virtual async Task<MessageAdminDetailDto> GetAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await MessageAdminManager.GetAdminDetailAsync(id, cancellationToken);
+        return new MessageAdminDetailDto
+        {
+            Id = entity.Id,
+            SessionId = entity.SessionId,
+            SessionSeq = entity.SessionSeq,
+            SenderId = entity.SenderId,
+            SenderName = entity.Sender?.Name,
+            ReceiverId = entity.ReceiverId,
+            ReceiverName = entity.Receiver?.Name,
+            Channel = entity.Channel,
+            MessageType = entity.MessageType,
+            IsPrivate = entity.IsPrivate,
+            IsRollbacked = entity.IsRollbacked,
+            RollbackTime = entity.RollbackTime,
+            Size = entity.Size,
+            CreationTime = entity.CreationTime,
+            ClientMessageId = entity.ClientMessageId,
+            ContentJson = entity.ContentJson,
+            SenderSessionUnitId = entity.SenderSessionUnitId,
+            ReceiverSessionUnitId = entity.ReceiverSessionUnitId
+        };
+    }
+
+    private static MessageAdminListItemDto MapToListItemDto(Message entity)
+    {
+        return new MessageAdminListItemDto
+        {
+            Id = entity.Id,
+            SessionId = entity.SessionId,
+            SessionSeq = entity.SessionSeq,
+            SenderId = entity.SenderId,
+            SenderName = entity.Sender?.Name,
+            ReceiverId = entity.ReceiverId,
+            ReceiverName = entity.Receiver?.Name,
+            Channel = entity.Channel,
+            MessageType = entity.MessageType,
+            IsPrivate = entity.IsPrivate,
+            IsRollbacked = entity.IsRollbacked,
+            RollbackTime = entity.RollbackTime,
+            Size = entity.Size,
+            CreationTime = entity.CreationTime
+        };
+    }
 
     [Authorize(ChatAdminPermissions.Messages.GetList)]
     public virtual async Task<MessageAdminHistoryResultDto> GetHistoryAsync(

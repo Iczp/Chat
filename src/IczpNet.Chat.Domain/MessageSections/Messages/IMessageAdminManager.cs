@@ -2,9 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 
 namespace IczpNet.Chat.MessageSections.Messages;
+
+public class MessageAdminListResult
+{
+    public long TotalCount { get; set; }
+
+    public List<Message> Items { get; set; } = new();
+}
 
 public class MessageAdminHistoryResult
 {
@@ -19,6 +27,24 @@ public class MessageAdminHistoryResult
 
 public interface IMessageAdminManager
 {
+    Task<MessageAdminListResult> GetAdminListAsync(
+        Guid? sessionId,
+        long? senderId,
+        long? receiverId,
+        MessageTypes? messageType,
+        bool? isRollbacked,
+        bool? isPrivate,
+        long? maxMessageId,
+        DateTime? startTime,
+        DateTime? endTime,
+        int skipCount,
+        int maxResultCount,
+        CancellationToken cancellationToken = default);
+
+    Task<Message> GetAdminDetailAsync(
+        long id,
+        CancellationToken cancellationToken = default);
+
     Task<MessageAdminHistoryResult> GetHistoryAdminAsync(
         Guid sessionUnitId,
         long? maxMessageId,

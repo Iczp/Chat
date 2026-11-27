@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
+using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.MessageSections.Messages;
@@ -21,6 +24,70 @@ public class MessageAdminManager(
     protected IMessageManager MessageManager { get; } = messageManager;
     protected IMessageSender MessageSender { get; } = messageSender;
     protected ISessionUnitManager SessionUnitManager { get; } = sessionUnitManager;
+
+    public virtual async Task<MessageAdminListResult> GetAdminListAsync(
+        Guid? sessionId,
+        long? senderId,
+        long? receiverId,
+        MessageTypes? messageType,
+        bool? isRollbacked,
+        bool? isPrivate,
+        long? maxMessageId,
+        DateTime? startTime,
+        DateTime? endTime,
+        int skipCount,
+        int maxResultCount,
+        CancellationToken cancellationToken = default)
+    {
+        var query = (await MessageRepository.GetQueryableAsync())
+            .Include(x => x.Sender)
+            .Include(x => x.Receiver)
+            .WhereIf(sessionId.HasValue, x => x.SessionId == sessionId.Value)
+            .WhereIf(senderId.HasValue, x => x.SenderId == senderId.Value)
+            .WhereIf(receiverId.HasValue, x => x.ReceiverId == receiverId.Value)
+            .WhereIf(messageType.HasValue, x => x.MessageType == messageType.Value)
+            .WhereIf(isRollbacked.HasValue, x => x.IsRollbacked == isRollbacked.Value)
+            .WhereIf(isPrivate.HasValue, x => x.IsPrivate == isPrivate.Value)
+            .WhereIf(maxMessageId.HasValue, x => x.Id < maxMessageId.Value)
+            .WhereIf(startTime.HasValue, x => x.CreationTime >= startTime.Value)
+            .WhereIf(endTime.HasValue, x => x.CreationTime < endTime.Value);
+
+        var totalCount = await AsyncExecuter.LongCountAsync(query, cancellationToken);
+        if (totalCount == 0)
+        {
+            return new MessageAdminListResult();
+        }
+
+        var items = await AsyncExecuter.ToListAsync(
+            query
+                .OrderByDescending(x => x.Id)
+                .Skip(Math.Max(0, skipCount))
+                .Take(Math.Clamp(maxResultCount > 0 ? maxResultCount : 20, 1, 200)),
+            cancellationToken);
+
+        return new MessageAdminListResult
+        {
+            TotalCount = totalCount,
+            Items = items
+        };
+    }
+
+    public virtual async Task<Message> GetAdminDetailAsync(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var query = (await MessageRepository.GetQueryableAsync())
+            .Include(x => x.Sender)
+            .Include(x => x.Receiver)
+            .Where(x => x.Id == id);
+        var entity = await AsyncExecuter.FirstOrDefaultAsync(query, cancellationToken);
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(typeof(Message), id);
+        }
+
+        return entity;
+    }
 
     public virtual async Task<MessageAdminHistoryResult> GetHistoryAdminAsync(
         Guid sessionUnitId,

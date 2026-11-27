@@ -6,12 +6,21 @@ using IczpNet.Chat.Admin.Messages.Dtos;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageSections.Templates;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace IczpNet.Chat.Admin.Messages;
 
 public interface IMessageAdminAppService : IApplicationService
 {
+    Task<PagedResultDto<MessageAdminListItemDto>> GetListAsync(
+        MessageAdminGetListInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<MessageAdminDetailDto> GetAsync(
+        long id,
+        CancellationToken cancellationToken = default);
+
     Task<MessageAdminHistoryResultDto> GetHistoryAsync(
         MessageAdminGetHistoryInput input,
         CancellationToken cancellationToken = default);

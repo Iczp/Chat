@@ -174,7 +174,42 @@ public static class ChatAdminPermissions
     {
         public const string Default = GroupName + ".Messages";
         public const string GetList = Default + ".GetList";
+        public const string GetDetail = Default + ".GetDetail";
         public const string Send = Default + ".Send";
         public const string Rollback = Default + ".Rollback";
+    }
+
+    public static class Overview
+    {
+        public const string Default = GroupName + ".Overview";
+    }
+
+    public static class Sessions
+    {
+        public const string Default = GroupName + ".Sessions";
+        public const string GetList = Default + ".GetList";
+        public const string GetDetail = Default + ".GetDetail";
+        public const string SetIsEnabled = Default + ".SetIsEnabled";
+    }
+
+    public static class SessionRequests
+    {
+        public const string Default = GroupName + ".SessionRequests";
+        public const string GetList = Default + ".GetList";
+        public const string GetDetail = Default + ".GetDetail";
+    }
+
+    public static class SessionRoles
+    {
+        public const string Default = GroupName + ".SessionRoles";
+        public const string GetList = Default + ".GetList";
+        public const string GetDetail = Default + ".GetDetail";
+    }
+
+    public static class SessionAnnouncements
+    {
+        public const string Default = GroupName + ".SessionAnnouncements";
+        public const string GetList = Default + ".GetList";
+        public const string GetDetail = Default + ".GetDetail";
     }
 }
