@@ -837,10 +837,9 @@ public class AttachmentController(
                 throw new BusinessException(ChatErrorCodes.Blobs.AccessDenied);
             }
 
-            var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
-            if (!sourcePrimary.UploaderChatObjectId.HasValue || !ownerIds.Contains(sourcePrimary.UploaderChatObjectId.Value))
+            if (!sourcePrimary.UploaderChatObjectId.HasValue || sourcePrimary.UploaderChatObjectId.Value != unit.OwnerId)
             {
-                throw new AbpAuthorizationException("Source attachment does not belong to current account.");
+                throw new AbpAuthorizationException("Source attachment does not belong to target chat object.");
             }
 
             effectiveFileName = string.IsNullOrWhiteSpace(input.FileName)

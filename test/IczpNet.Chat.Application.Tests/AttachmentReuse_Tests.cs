@@ -226,49 +226,58 @@ public class AttachmentReuse_Tests
         Assert.Equal(1, setup.PhysicalSaveCount);
         Assert.Equal(1L, setup.StorageObjectRefCount);
 
-        var reuseB = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        // Cross-ChatObject reuse under the same user account must be rejected.
+        await Assert.ThrowsAsync<AbpAuthorizationException>(() => controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        {
+            ReuseToken = uploadA.ReuseToken,
+            ClientUploadId = "cross-co-001",
+            FileName = "shared-report.pdf"
+        }));
+
+        // Same ChatObject can redeem its own ReuseToken without extra physical write.
+        var reuseA2 = await controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
         {
             ReuseToken = uploadA.ReuseToken,
             ClientUploadId = "client-op-001",
             FileName = "shared-report.pdf"
         });
 
-        Assert.NotEqual(uploadA.BlobId, reuseB.BlobId);
-        Assert.Equal("shared-report.pdf", reuseB.FileName);
+        Assert.NotEqual(uploadA.BlobId, reuseA2.BlobId);
+        Assert.Equal("shared-report.pdf", reuseA2.FileName);
         Assert.Equal(1, setup.PhysicalSaveCount);
         Assert.Equal(2L, setup.StorageObjectRefCount);
 
         var blobA = setup.StoredBlobs.Single(x => x.Id == uploadA.BlobId);
-        var blobB = setup.StoredBlobs.Single(x => x.Id == reuseB.BlobId);
-        Assert.Equal(blobA.StorageObjectId, blobB.StorageObjectId);
+        var blobA2 = setup.StoredBlobs.Single(x => x.Id == reuseA2.BlobId);
+        Assert.Equal(blobA.StorageObjectId, blobA2.StorageObjectId);
         Assert.Equal(101L, blobA.UploaderChatObjectId);
-        Assert.Equal(102L, blobB.UploaderChatObjectId);
-        Assert.Equal(BlobStatus.Temp, blobB.Status);
+        Assert.Equal(101L, blobA2.UploaderChatObjectId);
+        Assert.Equal(BlobStatus.Temp, blobA2.Status);
 
         // Retry with the same ClientUploadId should be idempotent.
-        var retryB = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        var retryA2 = await controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
         {
             ReuseToken = uploadA.ReuseToken,
             ClientUploadId = "client-op-001",
             FileName = "shared-report.pdf"
         });
-        Assert.Equal(reuseB.BlobId, retryB.BlobId);
+        Assert.Equal(reuseA2.BlobId, retryA2.BlobId);
         Assert.Equal(2L, setup.StorageObjectRefCount);
 
         // Clearing Redis cache must still hit persistent DB BlobReuseRecord with zero extra Temp blobs.
         setup.CacheStore.Clear();
-        var retryFromDb = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        var retryFromDb = await controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
         {
             ReuseToken = uploadA.ReuseToken,
             ClientUploadId = "client-op-001",
             FileName = "shared-report.pdf"
         });
-        Assert.Equal(reuseB.BlobId, retryFromDb.BlobId);
+        Assert.Equal(reuseA2.BlobId, retryFromDb.BlobId);
         Assert.Equal(2L, setup.StorageObjectRefCount);
 
         // Changing FileName under the same ClientUploadId must be rejected.
         await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+            controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
             {
                 ReuseToken = uploadA.ReuseToken,
                 ClientUploadId = "client-op-001",
@@ -349,7 +358,7 @@ public class AttachmentReuse_Tests
             CreateFormFile("race.pdf", "application/pdf", Encoding.UTF8.GetBytes("race-bytes")));
 
         // First request succeeds and commits winner record
-        var winner = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        var winner = await controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
         {
             ReuseToken = uploadA.ReuseToken,
             ClientUploadId = "race-op-1",
@@ -382,7 +391,7 @@ public class AttachmentReuse_Tests
                 return opts.IsTransactional ? loserWriteUow : readUow;
             });
 
-        var recovered = await controller.ReuseAsync(setup.UnitBId, new ReuseAttachmentInput
+        var recovered = await controller.ReuseAsync(setup.UnitAId, new ReuseAttachmentInput
         {
             ReuseToken = uploadA.ReuseToken,
             ClientUploadId = "race-op-1",
