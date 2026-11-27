@@ -2005,13 +2005,13 @@ redis.call('HSET', key, 'FieldB', valueB)
 
 # 83. Chat 管理端 ABP 规则
 
-本节适用于 IczpNet.Chat 提供给 Vben「即时通讯管理」的全部业务接口，优先于第 8 节对普通 Application 层的通用规定。按 [管理功能开发文档](docs/codex/CHAT-ADMIN-DEVELOPMENT.md) 先完成后端并验收实际 API 契约，再开发和切换 Vben。
+本节适用于 IczpNet.Chat 的全部管理业务接口，优先于第 8 节和第 82 节的通用规定。按 [管理功能开发文档](docs/codex/CHAT-ADMIN-DEVELOPMENT.md) 先完成后端并验收实际 API 契约，再开发和切换 Vben。
 
-- 管理用例统一由 `IczpNet.Chat.Admin.Application` 的 ABP ApplicationService 提供。该层只负责 ABP 授权、输入校验、DTO 映射、Unit of Work 边界与调用 Domain。管理服务直接依赖 Chat Domain 和必要的 Contracts，禁止调用 `IczpNet.Chat.Application` 或 `IczpNet.Chat.ManagementApplication` 的实现。
-- Chat 业务规则、资源范围判定、状态变化、业务查询语义与幂等统一在 `IczpNet.Chat.Domain`，优先复用现有 Manager、领域服务和仓储契约。数据库投影和索引查询由 EntityFrameworkCore 实现。管理服务禁止直接注入仓储、DbContext、Redis、SignalR 连接管理器或作业队列来执行 Chat 业务。
-- `ChatHttpApiHostModule` 为管理程序集注册 `ConventionalControllers`，管理路由根为 `/api/chat/admin`，远程服务名为 `ChatAdmin`。管理 AppService 统一使用自动 API，禁止配套手写 Controller。以运行中的 Swagger 和 ABP API 定义验证 HTTP 方法、路径、参数与 DTO。普通客户端路由按原契约维护。
+- 所有 Chat 管理 API 的 ApplicationService 和管理接口契约统一放在 `IczpNet.Chat.Admin.Application`。该层只负责 ABP 权限、请求参数校验、DTO 映射、Unit of Work 边界与调用 Domain。禁止引用或调用旧 Application 实现、通过 HTTP 转调旧接口，或继承旧 AppService 来暴露管理 API。
+- 所有 Chat 管理业务方法都在 `IczpNet.Chat.Domain`，包括业务查询、资源范围判断、状态转换、幂等和副作用协调。优先复用现有 Manager 和领域服务。旧 Application、Controller 或遗留管理服务内的业务逻辑在迁移时先提炼到 Domain，再由所需入口直接调用。数据库投影和索引查询由 EntityFrameworkCore 实现，管理 AppService 通过 Domain 访问这些能力。
+- `ChatHttpApiHostModule` 必须对 `ChatAdminApplicationModule` 程序集注册 ABP `ConventionalControllers`，使用 `RootPath = "chat/admin"` 和 `RemoteServiceName = "ChatAdmin"`。所有管理 API 统一生成至 `/api/chat/admin/...`。禁止为管理用例编写手写 Controller、Minimal API、Host 转发或旧路由别名。
 - 所有对外管理操作必须有显式 ABP Permission。区分资源读取、写入和高影响操作，由 Domain 校验租户与目标范围。权限授予、数据范围、写操作审计和敏感字段裁剪要在前端接入前完成真实 HTTP 验证。不能用前端菜单权限替代后端校验。
-- 迁移前盘点菜单、按钮、辅助请求和旧接口调用方。每页切换后验证该页所有 Chat 管理请求都经新的管理 API，禁止对 403、404 或错误结果回退到普通 Chat API。其他模块的通用认证、权限与设施接口遵守其所属模块契约。
+- 旧 `/api/chat/...` 接口只作为迁移盘点依据。Vben 的列表、详情、选择器、状态操作、批量操作和其他 Chat 管理请求必须走 `/api/chat/admin/...`。禁止直接调用、代理转发或失败时回退到旧接口。验收核对 Swagger、ABP API 定义、控制器程序集来源及 Vben 实际网络请求。其他模块的通用认证、权限与设施接口遵守其所属模块契约。
 
 
 
