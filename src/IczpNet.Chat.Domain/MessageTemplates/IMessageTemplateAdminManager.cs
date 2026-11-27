@@ -40,6 +40,17 @@ public class MessageTemplateAdminPreviewResult
     public TemplateContentInfo Snapshot { get; set; }
 }
 
+public class MessageTemplateAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; } = true;
+
+    public bool CanUse { get; set; } = true;
+
+    public IReadOnlyCollection<long> AllowedOwnerIds { get; set; }
+}
+
 public interface IMessageTemplateAdminManager
 {
     Task<MessageTemplateAdminListResult> GetAdminListAsync(
@@ -49,10 +60,13 @@ public interface IMessageTemplateAdminManager
         bool? isEnabled,
         int skipCount,
         int maxResultCount,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateDefinition> GetAdminDetailAsync(
         Guid id,
+        MessageTemplateAdminScope accessScope = null,
+        bool allowUsableRead = false,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateDefinition> CreateAdminAsync(
@@ -62,6 +76,7 @@ public interface IMessageTemplateAdminManager
         MessageTemplateVisibility visibility,
         string definition,
         Guid? tenantId,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateDefinition> UpdateAdminAsync(
@@ -71,33 +86,39 @@ public interface IMessageTemplateAdminManager
         string description,
         MessageTemplateVisibility visibility,
         string definition,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateAdminPublishResult> PublishAdminAsync(
         Guid id,
         string concurrencyStamp,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateDefinition> SetEnabledAdminAsync(
         Guid id,
         bool isEnabled,
         string concurrencyStamp,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateAdminRevisionListResult> GetRevisionsAdminAsync(
         Guid id,
         int skipCount,
         int maxResultCount,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateRevision> GetRevisionAdminAsync(
         Guid id,
         int version,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageTemplateAdminPreviewResult> PreviewAdminAsync(
         Guid? templateId,
         string definition,
         Dictionary<string, object> data,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 }

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.MessageTemplates.Dtos;
 using IczpNet.Chat.Admin.Permissions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageTemplates;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
@@ -18,10 +20,32 @@ namespace IczpNet.Chat.Admin.MessageTemplates;
 /// </summary>
 [Authorize(ChatAdminPermissions.MessageTemplates.Default)]
 [ExposeServices(typeof(MessageTemplateAppService), typeof(IMessageTemplateAdminAppService))]
-public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdminManager)
+public class MessageTemplateAppService(
+    IMessageTemplateAdminManager templateAdminManager,
+    IChatObjectManager chatObjectManager)
     : ApplicationService, IMessageTemplateAdminAppService
 {
     protected IMessageTemplateAdminManager TemplateAdminManager { get; } = templateAdminManager;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+
+    private async Task<MessageTemplateAdminScope> BuildScopeAsync()
+    {
+        var hasManageAll = await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.MessageTemplates.ManageAll);
+        var canUse = await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.MessageTemplates.Use);
+        IReadOnlyCollection<long> allowedOwners = null;
+        if (!hasManageAll && CurrentUser.Id.HasValue)
+        {
+            allowedOwners = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        }
+
+        return new MessageTemplateAdminScope
+        {
+            TenantId = CurrentTenant.Id,
+            HasManageAll = hasManageAll,
+            CanUse = canUse,
+            AllowedOwnerIds = allowedOwners
+        };
+    }
 
     [Authorize(ChatAdminPermissions.MessageTemplates.GetList)]
     public virtual async Task<PagedResultDto<MessageTemplateAdminDto>> GetListAsync(
@@ -29,6 +53,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         CancellationToken cancellationToken = default)
     {
         input ??= new MessageTemplateAdminGetListInput();
+        var accessScope = await BuildScopeAsync();
 
         var result = await TemplateAdminManager.GetAdminListAsync(
             input.OwnerId,
@@ -37,6 +62,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
             input.IsEnabled,
             input.SkipCount,
             input.MaxResultCount,
+            accessScope,
             cancellationToken);
 
         return new PagedResultDto<MessageTemplateAdminDto>(
@@ -49,7 +75,8 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var entity = await TemplateAdminManager.GetAdminDetailAsync(id, cancellationToken);
+        var accessScope = await BuildScopeAsync();
+        var entity = await TemplateAdminManager.GetAdminDetailAsync(id, accessScope, allowUsableRead: false, cancellationToken);
         return MapToDetailDto(entity);
     }
 
@@ -63,6 +90,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
             await AuthorizationService.CheckAsync(ChatAdminPermissions.MessageTemplates.Share);
         }
 
+        var accessScope = await BuildScopeAsync();
         var entity = await TemplateAdminManager.CreateAdminAsync(
             input.OwnerId,
             input.Name,
@@ -70,6 +98,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
             input.Visibility,
             input.Definition,
             CurrentTenant.Id,
+            accessScope,
             cancellationToken);
 
         return MapToDetailDto(entity);
@@ -86,6 +115,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
             await AuthorizationService.CheckAsync(ChatAdminPermissions.MessageTemplates.Share);
         }
 
+        var accessScope = await BuildScopeAsync();
         var entity = await TemplateAdminManager.UpdateAdminAsync(
             id,
             input.ConcurrencyStamp,
@@ -93,6 +123,7 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
             input.Description,
             input.Visibility,
             input.Definition,
+            accessScope,
             cancellationToken);
 
         return MapToDetailDto(entity);
@@ -105,9 +136,11 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         MessageTemplateAdminPublishInput input,
         CancellationToken cancellationToken = default)
     {
+        var accessScope = await BuildScopeAsync();
         var result = await TemplateAdminManager.PublishAdminAsync(
             id,
             input.ConcurrencyStamp,
+            accessScope,
             cancellationToken);
 
         return new MessageTemplateAdminPublishOutput
@@ -125,10 +158,12 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         MessageTemplateAdminSetEnabledInput input,
         CancellationToken cancellationToken = default)
     {
+        var accessScope = await BuildScopeAsync();
         var entity = await TemplateAdminManager.SetEnabledAdminAsync(
             id,
             input.IsEnabled,
             input.ConcurrencyStamp,
+            accessScope,
             cancellationToken);
 
         return MapToDetailDto(entity);
@@ -141,11 +176,13 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         CancellationToken cancellationToken = default)
     {
         input ??= new PagedResultRequestDto();
+        var accessScope = await BuildScopeAsync();
 
         var result = await TemplateAdminManager.GetRevisionsAdminAsync(
             id,
             input.SkipCount,
             input.MaxResultCount,
+            accessScope,
             cancellationToken);
 
         return new PagedResultDto<MessageTemplateAdminRevisionDto>(
@@ -159,7 +196,8 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         int version,
         CancellationToken cancellationToken = default)
     {
-        var entity = await TemplateAdminManager.GetRevisionAdminAsync(id, version, cancellationToken);
+        var accessScope = await BuildScopeAsync();
+        var entity = await TemplateAdminManager.GetRevisionAdminAsync(id, version, accessScope, cancellationToken);
         return new MessageTemplateAdminRevisionDetailDto
         {
             Id = entity.Id,
@@ -177,10 +215,12 @@ public class MessageTemplateAppService(IMessageTemplateAdminManager templateAdmi
         MessageTemplateAdminPreviewInput input,
         CancellationToken cancellationToken = default)
     {
+        var accessScope = await BuildScopeAsync();
         var result = await TemplateAdminManager.PreviewAdminAsync(
             input.TemplateId,
             input.Definition,
             input.Data,
+            accessScope,
             cancellationToken);
 
         return new MessageTemplateAdminPreviewOutput

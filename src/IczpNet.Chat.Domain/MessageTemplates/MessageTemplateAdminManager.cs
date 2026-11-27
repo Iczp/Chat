@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.MessageSections.Templates;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -21,6 +22,57 @@ public class MessageTemplateAdminManager(
     protected IRepository<MessageTemplateRevision, Guid> RevisionRepository { get; } = revisionRepository;
     protected MessageTemplateManager TemplateManager { get; } = templateManager;
 
+    private static void EnsureOwnerAuthorized(long ownerId, MessageTemplateAdminScope accessScope)
+    {
+        if (accessScope == null || accessScope.HasManageAll)
+        {
+            return;
+        }
+
+        if (accessScope.AllowedOwnerIds == null || !accessScope.AllowedOwnerIds.Contains(ownerId))
+        {
+            throw new AbpAuthorizationException("无权操作该主体的模板资源。");
+        }
+    }
+
+    private static void EnsureTemplateAccess(
+        MessageTemplateDefinition template,
+        MessageTemplateAdminScope accessScope,
+        bool allowUsableRead)
+    {
+        if (accessScope == null)
+        {
+            return;
+        }
+
+        if (template.TenantId != accessScope.TenantId)
+        {
+            throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
+        }
+
+        if (accessScope.HasManageAll)
+        {
+            return;
+        }
+
+        if (accessScope.AllowedOwnerIds != null && accessScope.AllowedOwnerIds.Contains(template.OwnerId))
+        {
+            return;
+        }
+
+        if (allowUsableRead &&
+            accessScope.CanUse &&
+            template.IsEnabled &&
+            template.PublishedVersion.HasValue &&
+            template.TenantId.HasValue &&
+            template.Visibility == MessageTemplateVisibility.TenantShared)
+        {
+            return;
+        }
+
+        throw new AbpAuthorizationException("无权访问该模板资源。");
+    }
+
     public virtual async Task<MessageTemplateAdminListResult> GetAdminListAsync(
         long? ownerId,
         string keyword,
@@ -28,15 +80,39 @@ public class MessageTemplateAdminManager(
         bool? isEnabled,
         int skipCount,
         int maxResultCount,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
 
         var query = await TemplateRepository.GetQueryableAsync();
 
+        if (accessScope != null)
+        {
+            query = query.Where(x => x.TenantId == accessScope.TenantId);
+        }
+
+        var allowedIds = accessScope?.AllowedOwnerIds?.ToList() ?? [];
+
         if (string.Equals(scope, "usable", StringComparison.OrdinalIgnoreCase))
         {
+            if (accessScope != null && !accessScope.CanUse && !accessScope.HasManageAll)
+            {
+                throw new AbpAuthorizationException("缺少模板使用权限。");
+            }
+
             query = query.Where(x => x.IsEnabled && x.PublishedVersion.HasValue);
+
+            if (accessScope != null && !accessScope.HasManageAll)
+            {
+                query = query.Where(x =>
+                    (x.Visibility == MessageTemplateVisibility.TenantShared && x.TenantId.HasValue) ||
+                    allowedIds.Contains(x.OwnerId));
+            }
+        }
+        else if (accessScope != null && !accessScope.HasManageAll)
+        {
+            query = query.Where(x => allowedIds.Contains(x.OwnerId));
         }
 
         if (ownerId.HasValue)
@@ -83,6 +159,8 @@ public class MessageTemplateAdminManager(
 
     public virtual async Task<MessageTemplateDefinition> GetAdminDetailAsync(
         Guid id,
+        MessageTemplateAdminScope accessScope = null,
+        bool allowUsableRead = false,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
@@ -93,6 +171,7 @@ public class MessageTemplateAdminManager(
             throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
         }
 
+        EnsureTemplateAccess(template, accessScope, allowUsableRead);
         return template;
     }
 
@@ -103,9 +182,11 @@ public class MessageTemplateAdminManager(
         MessageTemplateVisibility visibility,
         string definition,
         Guid? tenantId,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
+        EnsureOwnerAuthorized(ownerId, accessScope);
         TemplateManager.ValidateMetadata(name, description, visibility, tenantId);
         var parsed = TemplateManager.ValidateDefinitionJson(definition);
 
@@ -129,11 +210,12 @@ public class MessageTemplateAdminManager(
         string description,
         MessageTemplateVisibility visibility,
         string definition,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
 
-        var template = await GetAdminDetailAsync(id, cancellationToken);
+        var template = await GetAdminDetailAsync(id, accessScope, allowUsableRead: false, cancellationToken);
         TemplateManager.CheckConcurrency(template, concurrencyStamp);
         TemplateManager.UpdateDraft(template, concurrencyStamp, name, description, visibility, definition);
 
@@ -145,11 +227,12 @@ public class MessageTemplateAdminManager(
     public virtual async Task<MessageTemplateAdminPublishResult> PublishAdminAsync(
         Guid id,
         string concurrencyStamp,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
 
-        var template = await GetAdminDetailAsync(id, cancellationToken);
+        var template = await GetAdminDetailAsync(id, accessScope, allowUsableRead: false, cancellationToken);
         TemplateManager.CheckConcurrency(template, concurrencyStamp);
 
         var revision = TemplateManager.PreparePublication(template, concurrencyStamp, GuidGenerator.Create());
@@ -169,11 +252,12 @@ public class MessageTemplateAdminManager(
         Guid id,
         bool isEnabled,
         string concurrencyStamp,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
 
-        var template = await GetAdminDetailAsync(id, cancellationToken);
+        var template = await GetAdminDetailAsync(id, accessScope, allowUsableRead: false, cancellationToken);
         TemplateManager.CheckConcurrency(template, concurrencyStamp);
 
         template.SetEnabled(isEnabled);
@@ -185,10 +269,11 @@ public class MessageTemplateAdminManager(
         Guid id,
         int skipCount,
         int maxResultCount,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
-        await GetAdminDetailAsync(id, cancellationToken);
+        await GetAdminDetailAsync(id, accessScope, allowUsableRead: true, cancellationToken);
 
         var query = (await RevisionRepository.GetQueryableAsync())
             .Where(x => x.TemplateId == id);
@@ -219,10 +304,11 @@ public class MessageTemplateAdminManager(
     public virtual async Task<MessageTemplateRevision> GetRevisionAdminAsync(
         Guid id,
         int version,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
-        await GetAdminDetailAsync(id, cancellationToken);
+        await GetAdminDetailAsync(id, accessScope, allowUsableRead: true, cancellationToken);
 
         var query = (await RevisionRepository.GetQueryableAsync())
             .Where(x => x.TemplateId == id && x.Version == version);
@@ -240,21 +326,24 @@ public class MessageTemplateAdminManager(
         Guid? templateId,
         string definition,
         Dictionary<string, object> data,
+        MessageTemplateAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         TemplateManager.EnsureEnabled();
 
-        if (templateId.HasValue && templateId.Value != Guid.Empty)
+        if (!templateId.HasValue || templateId.Value == Guid.Empty)
         {
-            await GetAdminDetailAsync(templateId.Value, cancellationToken);
+            throw new UserFriendlyException("模板不存在。", ChatErrorCodes.TemplateMessages.TemplateNotFound);
         }
+
+        await GetAdminDetailAsync(templateId.Value, accessScope, allowUsableRead: false, cancellationToken);
 
         try
         {
             var parsed = TemplateManager.ValidateDefinitionJson(definition);
             var sanitizedData = TemplateManager.ValidateAndSanitizeData(data, parsed);
             var fallback = TemplateManager.GenerateFallbackText(parsed, sanitizedData);
-            var snapshot = TemplateManager.BuildSnapshot(templateId ?? Guid.Empty, 1, parsed, sanitizedData, fallback);
+            var snapshot = TemplateManager.BuildSnapshot(templateId.Value, 1, parsed, sanitizedData, fallback);
 
             return new MessageTemplateAdminPreviewResult
             {

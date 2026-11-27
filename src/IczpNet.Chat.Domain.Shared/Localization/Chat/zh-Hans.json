@@ -244,6 +244,7 @@
     "Permission:ChatAdmin.Messages": "管理端消息服务",
     "Permission:ChatAdmin.Messages.GetList": "查看消息列表",
     "Permission:ChatAdmin.Messages.GetDetail": "查看消息详情",
+    "Permission:ChatAdmin.Messages.GetContent": "查看消息正文",
     "Permission:ChatAdmin.Messages.Send": "发送管理消息",
     "Permission:ChatAdmin.Messages.Rollback": "撤回消息",
     "Permission:ChatAdmin.Overview": "运营总览",

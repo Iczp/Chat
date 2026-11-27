@@ -7,8 +7,10 @@ using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections.Templates;
 using IczpNet.Chat.SessionUnits;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Uow;
@@ -28,7 +30,35 @@ public class ArticleScheduleAdminManager(
     protected IAbpDistributedLock DistributedLock { get; } = distributedLock;
     protected IUnitOfWorkManager UnitOfWorkManager { get; } = unitOfWorkManager;
 
-    private async Task<long> ValidateSenderUnitAsync(Guid senderSessionUnitId, bool requireSendable)
+    private static void EnsureOwnerAuthorized(long ownerId, ArticleScheduleAdminScope accessScope)
+    {
+        if (accessScope == null || accessScope.HasManageAll)
+        {
+            return;
+        }
+
+        if (accessScope.AllowedOwnerIds == null || !accessScope.AllowedOwnerIds.Contains(ownerId))
+        {
+            throw new AbpAuthorizationException("无权操作该发送主体的定时文章任务。");
+        }
+    }
+
+    private static void EnsureTaskScope(ScheduledArticleMessage task, ArticleScheduleAdminScope accessScope)
+    {
+        if (accessScope == null)
+        {
+            return;
+        }
+
+        if (task.RequestedByTenantId != accessScope.TenantId)
+        {
+            throw new EntityNotFoundException(typeof(ScheduledArticleMessage), task.Id);
+        }
+
+        EnsureOwnerAuthorized(task.OwnerId, accessScope);
+    }
+
+    private async Task<long> ValidateSenderUnitAsync(Guid senderSessionUnitId, bool requireSendable, ArticleScheduleAdminScope accessScope)
     {
         ArticleScheduleManager.CheckEnabled();
         var unit = await SessionUnitManager.GetCacheAsync(senderSessionUnitId);
@@ -37,6 +67,8 @@ public class ArticleScheduleAdminManager(
         {
             throw new UserFriendlyException("请选择已启用的公众号或服务号会话。");
         }
+
+        EnsureOwnerAuthorized(unit.OwnerId, accessScope);
         return unit.OwnerId;
     }
 
@@ -56,12 +88,23 @@ public class ArticleScheduleAdminManager(
         ArticleScheduleStatus? status,
         int skipCount,
         int maxResultCount,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
         var query = (await Repository.GetQueryableAsync())
             .WhereIf(senderSessionUnitId.HasValue, x => x.SenderSessionUnitId == senderSessionUnitId.Value)
             .WhereIf(ownerId.HasValue, x => x.OwnerId == ownerId.Value)
             .WhereIf(status.HasValue, x => x.Status == status.Value);
+
+        if (accessScope != null)
+        {
+            query = query.Where(x => x.RequestedByTenantId == accessScope.TenantId);
+            if (!accessScope.HasManageAll)
+            {
+                var allowedIds = accessScope.AllowedOwnerIds?.ToList() ?? [];
+                query = query.Where(x => allowedIds.Contains(x.OwnerId));
+            }
+        }
 
         var totalCount = await AsyncExecuter.LongCountAsync(query, cancellationToken);
         if (totalCount == 0)
@@ -91,9 +134,10 @@ public class ArticleScheduleAdminManager(
         MessageInput<ArticleContentInput> message,
         Guid requestedBy,
         Guid? tenantId,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
-        var ownerId = await ValidateSenderUnitAsync(senderSessionUnitId, requireSendable: true);
+        var ownerId = await ValidateSenderUnitAsync(senderSessionUnitId, requireSendable: true, accessScope);
         if (id == Guid.Empty)
         {
             throw new UserFriendlyException("请提供稳定的任务标识。");
@@ -119,6 +163,7 @@ public class ArticleScheduleAdminManager(
         var existing = await Repository.FindAsync(id, cancellationToken: cancellationToken);
         if (existing != null)
         {
+            EnsureTaskScope(existing, accessScope);
             if (existing.RequestedBy != requestedBy ||
                 existing.SenderSessionUnitId != senderSessionUnitId ||
                 existing.InputJson != json ||
@@ -147,28 +192,32 @@ public class ArticleScheduleAdminManager(
     public virtual Task<ScheduledArticleMessage> RescheduleAdminAsync(
         Guid id,
         DateTimeOffset scheduledAt,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
-        return ChangeAsync(id, ValidateScheduledTime(scheduledAt), cancellationToken);
+        return ChangeAsync(id, ValidateScheduledTime(scheduledAt), accessScope, cancellationToken);
     }
 
     public virtual Task<ScheduledArticleMessage> CancelAdminAsync(
         Guid id,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
-        return ChangeAsync(id, null, cancellationToken);
+        return ChangeAsync(id, null, accessScope, cancellationToken);
     }
 
     public virtual Task<ScheduledArticleMessage> ExecuteNowAdminAsync(
         Guid id,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default)
     {
-        return ChangeAsync(id, Clock.Now, cancellationToken);
+        return ChangeAsync(id, Clock.Now, accessScope, cancellationToken);
     }
 
     private async Task<ScheduledArticleMessage> ChangeAsync(
         Guid id,
         DateTime? time,
+        ArticleScheduleAdminScope accessScope,
         CancellationToken cancellationToken)
     {
         ArticleScheduleManager.CheckEnabled();
@@ -183,7 +232,8 @@ public class ArticleScheduleAdminManager(
 
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         var task = await Repository.GetAsync(id, cancellationToken: cancellationToken);
-        await ValidateSenderUnitAsync(task.SenderSessionUnitId, requireSendable: time.HasValue);
+        EnsureTaskScope(task, accessScope);
+        await ValidateSenderUnitAsync(task.SenderSessionUnitId, requireSendable: time.HasValue, accessScope);
         if (time.HasValue)
         {
             task.Reschedule(time.Value);

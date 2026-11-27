@@ -296,7 +296,12 @@ public class AiRunManager(
             return;
         }
 
-        var distinctIds = idList.Distinct().Take(200).ToList();
+        var distinctIds = idList.Distinct().ToList();
+        if (distinctIds.Count > 100)
+        {
+            throw new BusinessException("ChatAdmin:AiRunBatchLimitExceeded", "单次批量删除不能超过 100 条记录。");
+        }
+
         var runs = await AiRunRepository.GetListAsync(x => distinctIds.Contains(x.Id), cancellationToken: cancellationToken);
 
         if (runs.Any(x => x.Status == AiRunStatus.Running))

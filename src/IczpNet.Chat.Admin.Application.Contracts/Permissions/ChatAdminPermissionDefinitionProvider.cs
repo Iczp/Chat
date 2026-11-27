@@ -124,6 +124,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         var messagesPermission = adminGroup.AddPermission(ChatAdminPermissions.Messages.Default, L("Permission:ChatAdmin.Messages"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.GetList, L("Permission:ChatAdmin.Messages.GetList"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.GetDetail, L("Permission:ChatAdmin.Messages.GetDetail"));
+        messagesPermission.AddChild(ChatAdminPermissions.Messages.GetContent, L("Permission:ChatAdmin.Messages.GetContent"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.Send, L("Permission:ChatAdmin.Messages.Send"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.Rollback, L("Permission:ChatAdmin.Messages.Rollback"));
 

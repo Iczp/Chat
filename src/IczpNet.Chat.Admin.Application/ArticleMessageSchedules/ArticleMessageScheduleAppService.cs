@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.ArticleMessageSchedules.Dtos;
 using IczpNet.Chat.Admin.Permissions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.MessageSections;
 using IczpNet.Chat.MessageSections.Templates;
 using Microsoft.AspNetCore.Authorization;
@@ -20,10 +22,30 @@ namespace IczpNet.Chat.Admin.ArticleMessageSchedules;
 /// </summary>
 [Authorize(ChatAdminPermissions.ArticleMessages.Default)]
 [ExposeServices(typeof(ArticleMessageScheduleAppService), typeof(IArticleMessageScheduleAdminAppService))]
-public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager scheduleAdminManager)
+public class ArticleMessageScheduleAppService(
+    IArticleScheduleAdminManager scheduleAdminManager,
+    IChatObjectManager chatObjectManager)
     : ApplicationService, IArticleMessageScheduleAdminAppService
 {
     protected IArticleScheduleAdminManager ScheduleAdminManager { get; } = scheduleAdminManager;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+
+    private async Task<ArticleScheduleAdminScope> BuildScopeAsync()
+    {
+        var hasManageAll = await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.ArticleMessages.Manage);
+        IReadOnlyCollection<long> allowedOwners = null;
+        if (!hasManageAll && CurrentUser.Id.HasValue)
+        {
+            allowedOwners = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+        }
+
+        return new ArticleScheduleAdminScope
+        {
+            TenantId = CurrentTenant.Id,
+            HasManageAll = hasManageAll,
+            AllowedOwnerIds = allowedOwners
+        };
+    }
 
     [Authorize(ChatAdminPermissions.ArticleMessages.Schedule)]
     public virtual async Task<ArticleMessageScheduleAdminDto> CreateAsync(
@@ -35,6 +57,7 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
             throw new AbpAuthorizationException("请先登录。");
         }
 
+        var scope = await BuildScopeAsync();
         var task = await ScheduleAdminManager.CreateAdminAsync(
             input.Id,
             input.SenderSessionUnitId,
@@ -42,6 +65,7 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
             input.Message,
             CurrentUser.Id.Value,
             CurrentTenant.Id,
+            scope,
             cancellationToken);
 
         return MapToDto(task);
@@ -53,6 +77,7 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
         CancellationToken cancellationToken = default)
     {
         input ??= new ArticleMessageScheduleAdminGetListInput();
+        var scope = await BuildScopeAsync();
 
         var result = await ScheduleAdminManager.GetAdminListAsync(
             input.SenderSessionUnitId,
@@ -60,6 +85,7 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
             input.Status,
             input.SkipCount,
             input.MaxResultCount,
+            scope,
             cancellationToken);
 
         return new PagedResultDto<ArticleMessageScheduleAdminDto>(
@@ -73,7 +99,8 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
         ArticleMessageScheduleAdminTimeInput input,
         CancellationToken cancellationToken = default)
     {
-        var task = await ScheduleAdminManager.RescheduleAdminAsync(id, input.ScheduledAt, cancellationToken);
+        var scope = await BuildScopeAsync();
+        var task = await ScheduleAdminManager.RescheduleAdminAsync(id, input.ScheduledAt, scope, cancellationToken);
         return MapToDto(task);
     }
 
@@ -82,7 +109,8 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var task = await ScheduleAdminManager.CancelAdminAsync(id, cancellationToken);
+        var scope = await BuildScopeAsync();
+        var task = await ScheduleAdminManager.CancelAdminAsync(id, scope, cancellationToken);
         return MapToDto(task);
     }
 
@@ -91,7 +119,8 @@ public class ArticleMessageScheduleAppService(IArticleScheduleAdminManager sched
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var task = await ScheduleAdminManager.ExecuteNowAdminAsync(id, cancellationToken);
+        var scope = await BuildScopeAsync();
+        var task = await ScheduleAdminManager.ExecuteNowAdminAsync(id, scope, cancellationToken);
         return MapToDto(task);
     }
 

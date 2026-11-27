@@ -104,6 +104,7 @@
     "Permission:ChatAdmin.Messages": "Admin Messages",
     "Permission:ChatAdmin.Messages.GetList": "View messages",
     "Permission:ChatAdmin.Messages.GetDetail": "View message detail",
+    "Permission:ChatAdmin.Messages.GetContent": "View message content",
     "Permission:ChatAdmin.Messages.Send": "Send message",
     "Permission:ChatAdmin.Messages.Rollback": "Rollback message",
     "Permission:ChatAdmin.Overview": "Operations Overview",

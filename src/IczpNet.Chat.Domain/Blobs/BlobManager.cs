@@ -345,6 +345,31 @@ public class BlobManager(
         return entity ?? throw new EntityNotFoundException(typeof(Blob), id);
     }
 
+    public virtual async Task<bool> IsProtectedChatBlobAsync(
+        Blob entity,
+        CancellationToken cancellationToken = default)
+    {
+        if (entity == null)
+        {
+            return false;
+        }
+
+        if (entity.IsStatic ||
+            string.Equals(entity.Container, "chat-files", StringComparison.OrdinalIgnoreCase) ||
+            entity.UploaderChatObjectId.HasValue ||
+            entity.UploadSessionUnitId.HasValue ||
+            entity.UploadSessionId.HasValue ||
+            entity.StorageObjectId.HasValue ||
+            entity.Status == BlobStatus.Bound ||
+            entity.RefCount > 0)
+        {
+            return true;
+        }
+
+        var refRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<BlobMessageRef, Guid>>();
+        return await refRepo.AnyAsync(r => r.BlobId == entity.Id, cancellationToken);
+    }
+
     public virtual async Task<Blob> UpdateAdminAsync(
         Guid id,
         string fileName,
@@ -353,6 +378,14 @@ public class BlobManager(
         CancellationToken cancellationToken = default)
     {
         var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
+        var isProtected = await IsProtectedChatBlobAsync(entity, cancellationToken);
+
+        if (isProtected && ((isPublic.HasValue && isPublic.Value) || (entity.IsStatic && isStatic.HasValue && !isStatic.Value)))
+        {
+            throw new BusinessException(
+                ChatErrorCodes.Blobs.AccessDenied,
+                "受保护的聊天附件或静态附件不允许公开或解除静态保护。");
+        }
 
         if (!string.IsNullOrWhiteSpace(fileName))
         {
@@ -386,6 +419,13 @@ public class BlobManager(
         if (entity.RefCount > 0)
         {
             throw new BusinessException("ChatAdmin:BlobInUse", "该附件仍被消息引用，无法删除。");
+        }
+
+        if (await IsProtectedChatBlobAsync(entity, cancellationToken))
+        {
+            throw new BusinessException(
+                ChatErrorCodes.Blobs.AccessDenied,
+                "受保护的聊天附件、临时上传或派生件不允许直接删除。");
         }
 
         await Repository.DeleteAsync(entity, autoSave: true, cancellationToken: cancellationToken);

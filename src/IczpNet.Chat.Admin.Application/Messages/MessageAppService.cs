@@ -58,6 +58,7 @@ public class MessageAppService(IMessageAdminManager messageAdminManager)
         CancellationToken cancellationToken = default)
     {
         var entity = await MessageAdminManager.GetAdminDetailAsync(id, cancellationToken);
+        var canViewContent = await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.Messages.GetContent);
         return new MessageAdminDetailDto
         {
             Id = entity.Id,
@@ -75,7 +76,7 @@ public class MessageAppService(IMessageAdminManager messageAdminManager)
             Size = entity.Size,
             CreationTime = entity.CreationTime,
             ClientMessageId = entity.ClientMessageId,
-            ContentJson = entity.ContentJson,
+            ContentJson = canViewContent ? entity.ContentJson : null,
             SenderSessionUnitId = entity.SenderSessionUnitId,
             ReceiverSessionUnitId = entity.ReceiverSessionUnitId
         };

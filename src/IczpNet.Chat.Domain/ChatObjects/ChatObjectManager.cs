@@ -507,12 +507,18 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         var entity = await Repository.GetAsync(id, cancellationToken: cancellationToken);
 
         entity.SetName(name);
-        entity.Code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        if (code != null)
+        {
+            entity.Code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+        }
         if (gender.HasValue)
         {
             entity.Gender = gender.Value;
         }
-        entity.Description = description;
+        if (description != null)
+        {
+            entity.Description = description;
+        }
         if (portrait != null)
         {
             entity.SetPortrait(portrait);
@@ -577,6 +583,21 @@ public class ChatObjectManager(IChatObjectRepository repository) : TreeManager<C
         if (chatObjectType == null)
         {
             throw new UserFriendlyException($"聊天对象类型不存在: {resolvedTypeId}");
+        }
+
+        if (args.ObjectType.HasValue && chatObjectType.ObjectType != args.ObjectType.Value)
+        {
+            throw new UserFriendlyException($"对象类型与 ChatObjectTypeId 不一致: {args.ObjectType.Value} != {chatObjectType.ObjectType}");
+        }
+
+        if (chatObjectType.ObjectType == ChatObjectTypeEnums.Room)
+        {
+            throw new UserFriendlyException("群聊对象必须通过群创建流程建立完整会话与系统成员单元，请勿使用通用创建接口。");
+        }
+
+        if (chatObjectType.ObjectType == ChatObjectTypeEnums.ShopWaiter)
+        {
+            throw new UserFriendlyException("店小二对象需要指定所属掌柜父级，请使用专用创建入口。");
         }
 
         var entity = new ChatObject(normalizedName, normalizedCode, chatObjectType, null);

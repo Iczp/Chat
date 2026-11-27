@@ -44,7 +44,7 @@ flowchart LR
 | 7 | 邀请码 | `InvitationCodeAppService` | `/api/chat/admin/invitation-code` | `GET /`、`GET /{id}`、`POST /`、`PUT /{id}`、`DELETE /{id}`、`POST /{id}/set-is-enabled` | `IInvitationCodeManager` |
 | 8 | URL 风控规则 | `UrlSecurityRuleAppService` | `/api/chat/admin/url-security-rule` | `GET /`、`GET /{id}`、`POST /`、`PUT /{id}`、`DELETE /{id}`、`POST /{id}/set-enabled`、`POST /refresh-cache`、`POST /check-url` | `IUrlSecurityAdminManager` |
 | 9 | 违规举报工单 | `SecurityReportAppService` | `/api/chat/admin/security-report` | `GET /`、`GET /{id}`、`POST /{id}/handle` | `IUrlSecurityAdminManager` |
-| 10 | AI 任务记录 | `AiRunAppService` | `/api/chat/admin/ai-run` | `GET /`、`GET /{id}`、`GET /by-source-message-id/{sourceMessageId}`、`GET /by-session/{sessionId}`、`POST /`、`POST /{id}/retry`、`POST /{id}/cancel`、`DELETE /{id}`、`POST /delete-many` | `IAiRunManager` |
+| 10 | AI 任务记录 | `AiRunAppService` | `/api/chat/admin/ai-run` | `GET /`、`GET /{id}`、`GET /by-source-message-id/{sourceMessageId}`、`GET /by-session/{sessionId}`、`POST /`、`POST /{id}/retry`、`POST /{id}/cancel`、`DELETE /{id}`、`DELETE /many` | `IAiRunManager` |
 | 11 | 对象存储 Blob | `BlobAppService` | `/api/chat/admin/blob` | `GET /`、`GET /{id}`、`GET /many`、`PUT /{id}`、`DELETE /{id}` | `IBlobManager` |
 | 12 | 扫码流水 | `ScanCodeAppService` | `/api/chat/admin/scan-code` | `GET /`、`GET /{id}`、`POST /scan` | `IScanCodeManager` |
 | 13 | 消息报表 | `MessageReportAppService` | `/api/chat/admin/message-report` | `GET /`、`GET /summary`、`GET /options`、`POST /flush` | `IMessageReportAdminManager` |
@@ -83,7 +83,7 @@ flowchart LR
 | `ChatAdmin.MessageTemplates` | `GetList` / `GetDetail` / `Create` / `Update` / `Publish` / `Share` / `Use` / `ManageAll` | 模板消息全生命周期与试发 |
 | `ChatAdmin.ArticleMessages` | `Manage` / `Schedule` / `Send` / `Rollback` | 文章消息推送、调度与撤回 |
 | `ChatAdmin.SessionUnits` | `GetList` / `GetDetail` | 会话单元查询 |
-| `ChatAdmin.Messages` | `GetList` / `GetDetail` / `Send` / `Rollback` | 消息档案检索、详情取证与撤回 |
+| `ChatAdmin.Messages` | `GetList` / `GetDetail` / `GetContent` / `Send` / `Rollback` | 消息档案检索、正文取证（独立授权）与撤回 |
 | `ChatAdmin.Sessions` | `GetList` / `GetDetail` / `SetIsEnabled` | 会话档案与启停管控 |
 | `ChatAdmin.SessionRequests` | `GetList` / `GetDetail` | 入群与好友申请记录查询 |
 | `ChatAdmin.SessionRoles` | `GetList` / `GetDetail` | 群角色与权限统计查询 |

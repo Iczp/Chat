@@ -146,7 +146,7 @@ public class ChatOpsGovernanceAdminAppService_Tests : ChatTestBase<ChatAdminAppl
             }, autoSave: true));
 
         var orphanBlob = await WithUnitOfWorkAsync(() =>
-            blobRepo.InsertAsync(new Blob(Guid.NewGuid(), "chat-files")
+            blobRepo.InsertAsync(new Blob(Guid.NewGuid(), "public-assets")
             {
                 Name = "orphan.txt",
                 FileName = "orphan.txt",
@@ -166,6 +166,12 @@ public class ChatOpsGovernanceAdminAppService_Tests : ChatTestBase<ChatAdminAppl
         });
         Assert.Equal("orphan-renamed.txt", updated.FileName);
         Assert.True(updated.IsPublic);
+
+        // Protected chat-files blob cannot be made public; static blob cannot clear IsStatic
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            _blobAppService.UpdateAsync(referencedBlob.Id, new BlobAdminUpdateInput { IsPublic = true }));
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            _blobAppService.UpdateAsync(staticBlob.Id, new BlobAdminUpdateInput { IsStatic = false }));
 
         await Assert.ThrowsAsync<BusinessException>(() => _blobAppService.DeleteAsync(staticBlob.Id));
         await Assert.ThrowsAsync<BusinessException>(() => _blobAppService.DeleteAsync(referencedBlob.Id));

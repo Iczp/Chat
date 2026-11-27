@@ -13,6 +13,15 @@ public class ArticleScheduleAdminListResult
     public List<ScheduledArticleMessage> Items { get; set; } = new();
 }
 
+public class ArticleScheduleAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; } = true;
+
+    public IReadOnlyCollection<long> AllowedOwnerIds { get; set; }
+}
+
 public interface IArticleScheduleAdminManager
 {
     Task<ArticleScheduleAdminListResult> GetAdminListAsync(
@@ -21,6 +30,7 @@ public interface IArticleScheduleAdminManager
         ArticleScheduleStatus? status,
         int skipCount,
         int maxResultCount,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<ScheduledArticleMessage> CreateAdminAsync(
@@ -30,18 +40,22 @@ public interface IArticleScheduleAdminManager
         MessageInput<ArticleContentInput> message,
         Guid requestedBy,
         Guid? tenantId,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<ScheduledArticleMessage> RescheduleAdminAsync(
         Guid id,
         DateTimeOffset scheduledAt,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<ScheduledArticleMessage> CancelAdminAsync(
         Guid id,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 
     Task<ScheduledArticleMessage> ExecuteNowAdminAsync(
         Guid id,
+        ArticleScheduleAdminScope accessScope = null,
         CancellationToken cancellationToken = default);
 }

@@ -175,6 +175,7 @@ public static class ChatAdminPermissions
         public const string Default = GroupName + ".Messages";
         public const string GetList = Default + ".GetList";
         public const string GetDetail = Default + ".GetDetail";
+        public const string GetContent = Default + ".GetContent";
         public const string Send = Default + ".Send";
         public const string Rollback = Default + ".Rollback";
     }
