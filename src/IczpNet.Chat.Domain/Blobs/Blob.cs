@@ -117,6 +117,12 @@ public class Blob : BaseEntity<Guid>, IIsPublic, IIsStatic
     [NotMapped]
     public virtual byte[] Bytes { get; set; }
 
+    /// <summary>
+    /// 本次上传或去重链路中已计算的内容 SHA-256（小写十六进制，非持久化字段，用于避免对大文件重复计算哈希）
+    /// </summary>
+    [NotMapped]
+    public virtual string ContentSha256 { get; set; }
+
     public virtual BlobContent Content { get; set; } = new BlobContent();
 
     public Blob() { }

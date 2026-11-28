@@ -87,6 +87,7 @@ public class BlobManager(
             await IncrementRefCountInCurrentUowAsync(sharedInfo.Id);
             blob.SetStorageObject(null);
             blob.StorageObjectId = sharedInfo.Id;
+            blob.ContentSha256 = sharedInfo.Sha256;
             return await Repository.InsertAsync(blob, autoSave: true);
         }
 
@@ -101,7 +102,10 @@ public class BlobManager(
             return entity;
         }
 
-        var sha256 = Convert.ToHexString(SHA256.HashData(blob.Bytes)).ToLowerInvariant();
+        var sha256 = !string.IsNullOrWhiteSpace(blob.ContentSha256)
+            ? blob.ContentSha256.Trim().ToLowerInvariant()
+            : Convert.ToHexString(SHA256.HashData(blob.Bytes)).ToLowerInvariant();
+        blob.ContentSha256 = sha256;
         var fileSize = blob.Bytes.LongLength;
         var storageScope = CurrentTenant.Id?.ToString("N") ?? "host";
         var lockName = BuildObjectLockName(storageScope, blob.Container, sha256, fileSize);

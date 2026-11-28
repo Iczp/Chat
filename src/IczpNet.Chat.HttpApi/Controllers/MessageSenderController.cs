@@ -122,6 +122,39 @@ public class MessageSenderController(
         });
     }
 
+    protected static string FormatCacheableImageMetadata(string profile)
+        => !string.IsNullOrWhiteSpace(profile) && profile.Length <= 2000 ? profile : null;
+
+    protected virtual async Task<string> ResolveBlobSha256Async(
+        Blob blob,
+        byte[] bytes,
+        IAttachmentProcessingReuseManager reuseManager)
+    {
+        if (!string.IsNullOrWhiteSpace(blob?.ContentSha256))
+        {
+            return blob.ContentSha256;
+        }
+
+        if (!string.IsNullOrWhiteSpace(blob?.StorageObject?.Sha256))
+        {
+            return blob.StorageObject.Sha256;
+        }
+
+        if (blob?.StorageObjectId != null)
+        {
+            var storageObj = await BlobManager.FindStorageObjectAsync(blob.StorageObjectId.Value);
+            if (!string.IsNullOrWhiteSpace(storageObj?.Sha256))
+            {
+                blob.ContentSha256 = storageObj.Sha256;
+                return storageObj.Sha256;
+            }
+        }
+
+        return reuseManager != null
+            ? reuseManager.ComputeSha256(bytes)
+            : Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes ?? []));
+    }
+
     protected virtual Task<Blob> SavePrivateChatTempBlobAsync(
         Guid blobId,
         byte[] bytes,
@@ -131,7 +164,8 @@ public class MessageSenderController(
         string blobName,
         SessionUnitCacheItem unit,
         BlobRoles role,
-        Guid? parentBlobId = null)
+        Guid? parentBlobId = null,
+        string contentSha256 = null)
     {
         var uploadOptions = LazyServiceProvider.LazyGetRequiredService<IOptions<AttachmentUploadOptions>>().Value;
         return BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
@@ -143,6 +177,39 @@ public class MessageSenderController(
             Name = blobName,
             Suffix = suffix,
             Bytes = bytes,
+            ContentSha256 = contentSha256,
+            UploaderChatObjectId = unit.OwnerId,
+            UploadSessionUnitId = unit.Id,
+            UploadSessionId = unit.SessionId,
+            ParentBlobId = parentBlobId,
+            Role = role,
+            Status = BlobStatus.Temp,
+            ExpireTime = Clock.Now.AddHours(uploadOptions.TempBlobExpireHours),
+            RefCount = 0,
+        });
+    }
+
+    protected virtual Task<Blob> SaveTempBlobFromReadyResultAsync(
+        Guid blobId,
+        AttachmentProcessingResult readyResult,
+        string fileName,
+        string fallbackMimeType,
+        string fallbackSuffix,
+        string blobName,
+        SessionUnitCacheItem unit,
+        BlobRoles role,
+        Guid? parentBlobId = null)
+    {
+        var uploadOptions = LazyServiceProvider.LazyGetRequiredService<IOptions<AttachmentUploadOptions>>().Value;
+        return BlobManager.CreateAsync(new Blob(blobId, ChatFilesContainer)
+        {
+            IsPublic = false,
+            FileSize = readyResult.OutputFileSize ?? 0,
+            MimeType = readyResult.OutputMimeType ?? fallbackMimeType,
+            FileName = Path.GetFileName(fileName),
+            Name = blobName,
+            Suffix = readyResult.OutputSuffix ?? fallbackSuffix,
+            StorageObjectId = readyResult.OutputStorageObjectId,
             UploaderChatObjectId = unit.OwnerId,
             UploadSessionUnitId = unit.Id,
             UploadSessionId = unit.SessionId,
@@ -295,123 +362,232 @@ public class MessageSenderController(
         var thumbnailBlobId = GuidGenerator.Create();
         var directoryName = await GetDirectoryNameAsync(primaryBlobId, "images", sessionUnit, file);
 
-        async Task<Blob> SaveImageAsync(Guid blobId, byte[] srcBytes, string name, int maxSize, bool isResize, BlobRoles role, Guid? parentBlobId = null)
-        {
-            byte[] resizedBytes = srcBytes;
+        var reuseManager = LazyServiceProvider.LazyGetService<IAttachmentProcessingReuseManager>();
+        var reuseEnabled = reuseManager?.IsEnabled() ?? false;
+        var storageScope = CurrentTenant.Id?.ToString("N") ?? "host";
+        var sourceSha256 = reuseEnabled ? reuseManager.ComputeSha256(bytes) : null;
+        var bigImageSize = MessageSetting.ImageSetting.BigSize;
+        var thumbnailImageSize = MessageSetting.ImageSetting.ThumbnailSize;
+        var primaryRecipeHash = reuseEnabled ? reuseManager.BuildImagePrimaryRecipeHash(MessageSetting.ImageSetting) : null;
+        var thumbRecipeHash = reuseEnabled ? reuseManager.BuildImageThumbnailRecipeHash(MessageSetting.ImageSetting) : null;
 
-            if (isResize)
+        Image sourceImage = null;
+        Image GetOrDecodeSourceImage() => sourceImage ??= new Image(bytes);
+
+        try
+        {
+            var imageContent = new ImageContentInfo()
             {
-                var resizeder = await ImageResizer.ResizeAsync(srcBytes, new ImageResizeArgs()
+                BlobId = primaryBlobId,
+                ThumbnailBlobId = thumbnailBlobId,
+                ContentType = file.ContentType,
+                Suffix = suffix
+            };
+
+            byte[] primaryBytesForThumb = bytes;
+
+            if (isOriginal)
+            {
+                var originalBlob = await SavePrivateChatTempBlobAsync(
+                    primaryBlobId,
+                    bytes,
+                    file.FileName,
+                    file.ContentType,
+                    suffix,
+                    $"{directoryName}/{filename}_original{suffix}",
+                    sessionUnit,
+                    BlobRoles.Primary,
+                    contentSha256: sourceSha256);
+
+                var srcImg = GetOrDecodeSourceImage();
+                (int width, int height) = GetImageActualDimensions(srcImg);
+
+                imageContent.BlobId = originalBlob.Id;
+                imageContent.OriginalBlobId = originalBlob.Id;
+                imageContent.OriginalUrl = await GetFileUrlAsync(originalBlob.Id, originalBlob.MimeType);
+                imageContent.Url = imageContent.OriginalUrl;
+                imageContent.Width = width;
+                imageContent.Height = height;
+                imageContent.Size = originalBlob.FileSize;
+                imageContent.Profile = GetImageProfileJson(srcImg);
+            }
+            else
+            {
+                Blob primaryBlob = null;
+                byte[] primaryBytes = null;
+                int? primaryWidth = null;
+                int? primaryHeight = null;
+                string profile = null;
+
+                if (reuseEnabled)
                 {
-                    Width = (uint)maxSize,
-                    Height = (uint)maxSize,
-                    Mode = ImageResizeMode.Max
-                });
-                if (resizeder.State == ImageProcessState.Unsupported)
-                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
-                resizedBytes = resizeder.Result;
+                    var readyPrimary = await reuseManager.FindReadyResultAsync(
+                        storageScope, ChatFilesContainer, sourceSha256, bytes.LongLength,
+                        AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash);
+                    if (readyPrimary?.OutputStorageObjectId != null)
+                    {
+                        primaryBlob = await SaveTempBlobFromReadyResultAsync(
+                            primaryBlobId,
+                            readyPrimary,
+                            file.FileName,
+                            file.ContentType,
+                            suffix,
+                            $"{directoryName}/{filename}_{bigImageSize}{readyPrimary.OutputSuffix ?? suffix}",
+                            sessionUnit,
+                            BlobRoles.Primary);
+                        primaryWidth = readyPrimary.Width;
+                        primaryHeight = readyPrimary.Height;
+                        profile = readyPrimary.MetadataJson;
+                    }
+                }
+
+                if (primaryBlob == null)
+                {
+                    var resizeder = await ImageResizer.ResizeAsync(bytes, new ImageResizeArgs()
+                    {
+                        Width = (uint)bigImageSize,
+                        Height = (uint)bigImageSize,
+                        Mode = ImageResizeMode.Max
+                    });
+                    if (resizeder.State == ImageProcessState.Unsupported)
+                    {
+                        throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
+                    }
+
+                    primaryBytes = resizeder.State == ImageProcessState.Done && resizeder.Result?.Length > 0
+                        ? resizeder.Result
+                        : bytes;
+
+                    if (!ReferenceEquals(primaryBytes, bytes))
+                    {
+                        using Image img = new(primaryBytes);
+                        (primaryWidth, primaryHeight) = GetImageActualDimensions(img);
+                    }
+                    else
+                    {
+                        (primaryWidth, primaryHeight) = GetImageActualDimensions(GetOrDecodeSourceImage());
+                    }
+
+                    profile = GetImageProfileJson(GetOrDecodeSourceImage());
+
+                    primaryBlob = await SavePrivateChatTempBlobAsync(
+                        primaryBlobId,
+                        primaryBytes,
+                        file.FileName,
+                        file.ContentType,
+                        suffix,
+                        $"{directoryName}/{filename}_{bigImageSize}{suffix}",
+                        sessionUnit,
+                        BlobRoles.Primary,
+                        contentSha256: ReferenceEquals(primaryBytes, bytes) ? sourceSha256 : null);
+
+                    if (reuseEnabled && primaryBlob.StorageObjectId.HasValue)
+                    {
+                        await reuseManager.RecordReadyResultAsync(
+                            storageScope, primaryBlob.Container, sourceSha256, bytes.LongLength,
+                            AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash,
+                            primaryBlob.StorageObjectId, primaryBlob.MimeType, primaryBlob.Suffix, primaryBlob.FileSize,
+                            primaryWidth, primaryHeight, null,
+                            metadataJson: FormatCacheableImageMetadata(profile));
+                    }
+                }
+
+                primaryBytesForThumb = primaryBytes;
+
+                if (!primaryWidth.HasValue || !primaryHeight.HasValue)
+                {
+                    var (srcW, srcH) = GetImageActualDimensions(GetOrDecodeSourceImage());
+                    primaryWidth ??= srcW;
+                    primaryHeight ??= srcH;
+                }
+
+                profile ??= GetImageProfileJson(GetOrDecodeSourceImage());
+
+                imageContent.BlobId = primaryBlob.Id;
+                imageContent.Width = primaryWidth.Value;
+                imageContent.Height = primaryHeight.Value;
+                imageContent.Size = primaryBlob.FileSize;
+                imageContent.Url = await GetFileUrlAsync(primaryBlob.Id, primaryBlob.MimeType);
+                imageContent.Profile = profile;
             }
 
-            return await SavePrivateChatTempBlobAsync(
-                blobId,
-                resizedBytes,
-                file.FileName,
-                file.ContentType,
-                suffix,
-                name,
-                sessionUnit,
-                role,
-                parentBlobId);
+            Blob thumbBlob = null;
+            if (reuseEnabled)
+            {
+                var readyThumb = await reuseManager.FindReadyResultAsync(
+                    storageScope, ChatFilesContainer, sourceSha256, bytes.LongLength,
+                    AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash);
+                if (readyThumb?.OutputStorageObjectId != null)
+                {
+                    thumbBlob = await SaveTempBlobFromReadyResultAsync(
+                        thumbnailBlobId,
+                        readyThumb,
+                        file.FileName,
+                        file.ContentType,
+                        suffix,
+                        $"{directoryName}/{filename}_{thumbnailImageSize}{readyThumb.OutputSuffix ?? suffix}",
+                        sessionUnit,
+                        BlobRoles.Thumbnail,
+                        parentBlobId: imageContent.BlobId);
+                }
+            }
+
+            if (thumbBlob == null)
+            {
+                var thumbSourceBytes = primaryBytesForThumb ?? bytes;
+                var resizedThumb = await ImageResizer.ResizeAsync(thumbSourceBytes, new ImageResizeArgs()
+                {
+                    Width = (uint)thumbnailImageSize,
+                    Height = (uint)thumbnailImageSize,
+                    Mode = ImageResizeMode.Max
+                });
+                if (resizedThumb.State == ImageProcessState.Unsupported)
+                {
+                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
+                }
+
+                var thumbBytes = resizedThumb.State == ImageProcessState.Done && resizedThumb.Result?.Length > 0
+                    ? resizedThumb.Result
+                    : thumbSourceBytes;
+
+                thumbBlob = await SavePrivateChatTempBlobAsync(
+                    thumbnailBlobId,
+                    thumbBytes,
+                    file.FileName,
+                    file.ContentType,
+                    suffix,
+                    $"{directoryName}/{filename}_{thumbnailImageSize}{suffix}",
+                    sessionUnit,
+                    BlobRoles.Thumbnail,
+                    parentBlobId: imageContent.BlobId,
+                    contentSha256: ReferenceEquals(thumbBytes, bytes) ? sourceSha256 : null);
+
+                if (reuseEnabled && thumbBlob.StorageObjectId.HasValue)
+                {
+                    await reuseManager.RecordReadyResultAsync(
+                        storageScope, thumbBlob.Container, sourceSha256, bytes.LongLength,
+                        AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash,
+                        thumbBlob.StorageObjectId, thumbBlob.MimeType, thumbBlob.Suffix, thumbBlob.FileSize,
+                        null, null, null);
+                }
+            }
+
+            imageContent.ThumbnailBlobId = thumbBlob.Id;
+            imageContent.ThumbnailUrl = await GetFileUrlAsync(thumbBlob.Id, thumbBlob.MimeType);
+
+            var sendResult = await MessageSenderAppService.SendImageAsync(sessionUnitId, new MessageInput<ImageContentInfo>()
+            {
+                QuoteMessageId = quoteMessageId,
+                RemindList = remindList,
+                Content = imageContent,
+            });
+
+            return new JsonResult(sendResult);
         }
-
-        var thumbnailImageSize = MessageSetting.ImageSetting.ThumbnailSize;
-
-        await SaveImageAsync(
-            thumbnailBlobId,
-            bytes,
-            $"{directoryName}/{filename}_{thumbnailImageSize}{suffix}",
-            thumbnailImageSize,
-            true,
-            BlobRoles.Thumbnail,
-            primaryBlobId);
-
-        var imageContent = new ImageContentInfo()
+        finally
         {
-            BlobId = primaryBlobId,
-            ThumbnailBlobId = thumbnailBlobId,
-            ThumbnailUrl = await GetFileUrlAsync(thumbnailBlobId, file.ContentType),
-            ContentType = file.ContentType,
-            Suffix = suffix
-        };
-
-        var bigImageSize = MessageSetting.ImageSetting.BigSize;
-
-        if (isOriginal)
-        {
-            using Image image = new(bytes);
-            var maxSize = checked((int)Math.Max(image.Width, image.Height));
-
-            await SaveImageAsync(
-                primaryBlobId,
-                bytes,
-                $"{directoryName}/{filename}_original{suffix}",
-                maxSize,
-                false,
-                BlobRoles.Primary);
-
-            (int width, int height) = GetImageActualDimensions(image);
-
-            imageContent.BlobId = primaryBlobId;
-            imageContent.OriginalBlobId = primaryBlobId;
-            imageContent.OriginalUrl = await GetFileUrlAsync(primaryBlobId, file.ContentType);
-
-            imageContent.Width = width;
-
-            imageContent.Height = height;
-
-            imageContent.Size = bytes.Length;
-
-            imageContent.Url = imageContent.OriginalUrl;
-
-            imageContent.Profile = GetImageProfileJson(image);
+            sourceImage?.Dispose();
         }
-        else
-        {
-            var blob = await SaveImageAsync(
-                primaryBlobId,
-                bytes,
-                $"{directoryName}/{filename}_{bigImageSize}{suffix}",
-                bigImageSize,
-                true,
-                BlobRoles.Primary);
-
-            using Image img = new(blob.Bytes);
-
-            (int width, int height) = GetImageActualDimensions(img);
-
-            double p = (double)width / height;
-
-            imageContent.BlobId = primaryBlobId;
-
-            imageContent.Width = p > 1 ? bigImageSize : Convert.ToInt32(bigImageSize * p);
-
-            imageContent.Height = p > 1 ? Convert.ToInt32(bigImageSize / p) : bigImageSize;
-
-            imageContent.Size = blob.Bytes.Length;
-
-            imageContent.Url = await GetFileUrlAsync(primaryBlobId, file.ContentType);
-
-            imageContent.Profile = GetImageProfileJson(img);
-        }
-
-        var sendResult = await MessageSenderAppService.SendImageAsync(sessionUnitId, new MessageInput<ImageContentInfo>()
-        {
-            QuoteMessageId = quoteMessageId,
-            RemindList = remindList,
-            Content = imageContent,
-        });
-
-        return new JsonResult(sendResult);
     }
 
     [HttpPost]
@@ -461,11 +637,38 @@ public class MessageSenderController(
 
         if (!duration.HasValue)
         {
-            var audioInfo = await MediaResolver.GetAudioInfoAsync(bytes, soundBlob.FileName);
+            var reuseManager = LazyServiceProvider.LazyGetService<IAttachmentProcessingReuseManager>();
+            var reuseEnabled = reuseManager?.IsEnabled() ?? false;
+            var storageScope = CurrentTenant.Id?.ToString("N") ?? "host";
+            var soundSha256 = reuseEnabled ? await ResolveBlobSha256Async(soundBlob, bytes, reuseManager) : null;
+            var soundRecipeHash = reuseEnabled ? reuseManager.BuildSoundProbeRecipeHash() : null;
 
-            if (audioInfo != null)
+            var readySound = reuseEnabled
+                ? await reuseManager.FindReadyResultAsync(
+                    storageScope, soundBlob.Container, soundSha256, bytes.LongLength,
+                    AttachmentMediaType.Sound, BlobRoles.Primary, soundRecipeHash)
+                : null;
+
+            if (readySound?.DurationMs != null)
             {
-                content.Time = (int)audioInfo.Duration.Value.TotalMilliseconds;
+                content.Time = readySound.DurationMs.Value;
+            }
+            else
+            {
+                var audioInfo = await MediaResolver.GetAudioInfoAsync(bytes, soundBlob.FileName);
+
+                if (audioInfo?.Duration != null && audioInfo.Duration.Value > TimeSpan.Zero)
+                {
+                    content.Time = (int)audioInfo.Duration.Value.TotalMilliseconds;
+                    if (reuseEnabled && soundBlob.StorageObjectId.HasValue)
+                    {
+                        await reuseManager.RecordReadyResultAsync(
+                            storageScope, soundBlob.Container, soundSha256, bytes.LongLength,
+                            AttachmentMediaType.Sound, BlobRoles.Primary, soundRecipeHash,
+                            soundBlob.StorageObjectId, soundBlob.MimeType, soundBlob.Suffix, soundBlob.FileSize,
+                            null, null, content.Time);
+                    }
+                }
             }
         }
 
@@ -524,7 +727,141 @@ public class MessageSenderController(
 
         if (MessageSetting.VideoSetting.IsGenerateSnapshot)
         {
-            await GenerateSnapshotAsync(videoBlob, content, sessionUnit);
+            var reuseManager = LazyServiceProvider.LazyGetService<IAttachmentProcessingReuseManager>();
+            var reuseEnabled = reuseManager?.IsEnabled() ?? false;
+            var storageScope = CurrentTenant.Id?.ToString("N") ?? "host";
+            var videoSha256 = reuseEnabled ? await ResolveBlobSha256Async(videoBlob, bytes, reuseManager) : null;
+            var snapRecipeHash = reuseEnabled ? reuseManager.BuildVideoSnapshotRecipeHash(MessageSetting.VideoSetting) : null;
+            var snapThumbRecipeHash = reuseEnabled ? reuseManager.BuildVideoSnapshotThumbnailRecipeHash(MessageSetting.VideoSetting) : null;
+            var gifRecipeHash = reuseEnabled ? reuseManager.BuildVideoGifRecipeHash(MessageSetting.VideoSetting) : null;
+
+            AttachmentProcessingResult readySnap = null;
+            if (reuseEnabled)
+            {
+                readySnap = await reuseManager.FindReadyResultAsync(
+                    storageScope, videoBlob.Container, videoSha256, bytes.LongLength,
+                    AttachmentMediaType.Video, BlobRoles.Snapshot, snapRecipeHash);
+                if (readySnap?.OutputStorageObjectId != null)
+                {
+                    var snapSuffix = readySnap.OutputSuffix ?? ".png";
+                    var snapMime = readySnap.OutputMimeType ?? "image/png";
+                    var snapBlob = await SaveTempBlobFromReadyResultAsync(
+                        GuidGenerator.Create(),
+                        readySnap,
+                        $"{Path.GetFileNameWithoutExtension(file.FileName)}.snapshot{snapSuffix}",
+                        snapMime,
+                        snapSuffix,
+                        $"{videoBlob.Name}.snapshot{snapSuffix}",
+                        sessionUnit,
+                        BlobRoles.Snapshot,
+                        parentBlobId: videoBlob.Id);
+                    content.SnapshotBlobId = snapBlob.Id;
+                    content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);
+                    if (readySnap.Width.GetValueOrDefault() > 0)
+                    {
+                        content.Width = readySnap.Width.Value;
+                        content.ImageWidth = readySnap.Width.Value;
+                    }
+                    if (readySnap.Height.GetValueOrDefault() > 0)
+                    {
+                        content.Height = readySnap.Height.Value;
+                        content.ImageHeight = readySnap.Height.Value;
+                    }
+                    if (readySnap.DurationMs.HasValue)
+                    {
+                        content.Duration = readySnap.DurationMs.Value / 1000.0;
+                    }
+                }
+
+                var readySnapThumb = await reuseManager.FindReadyResultAsync(
+                    storageScope, videoBlob.Container, videoSha256, bytes.LongLength,
+                    AttachmentMediaType.Video, BlobRoles.SnapshotThumbnail, snapThumbRecipeHash);
+                if (readySnapThumb?.OutputStorageObjectId != null)
+                {
+                    var thumbSuffix = readySnapThumb.OutputSuffix ?? ".png";
+                    var thumbMime = readySnapThumb.OutputMimeType ?? "image/png";
+                    var thumbBlob = await SaveTempBlobFromReadyResultAsync(
+                        GuidGenerator.Create(),
+                        readySnapThumb,
+                        $"thumb_{Path.GetFileNameWithoutExtension(file.FileName)}{thumbSuffix}",
+                        thumbMime,
+                        thumbSuffix,
+                        $"{videoBlob.Name}.thumbnail{thumbSuffix}",
+                        sessionUnit,
+                        BlobRoles.SnapshotThumbnail,
+                        parentBlobId: videoBlob.Id);
+                    content.SnapshotThumbnailBlobId = thumbBlob.Id;
+                    content.SnapshotThumbnailUrl = await GetFileUrlAsync(thumbBlob.Id, thumbBlob.MimeType);
+                }
+
+                var readyGif = await reuseManager.FindReadyResultAsync(
+                    storageScope, videoBlob.Container, videoSha256, bytes.LongLength,
+                    AttachmentMediaType.Video, BlobRoles.Gif, gifRecipeHash);
+                if (readyGif?.OutputStorageObjectId != null)
+                {
+                    var gifSuffix = readyGif.OutputSuffix ?? ".gif";
+                    var gifMime = readyGif.OutputMimeType ?? "image/gif";
+                    var gifBlob = await SaveTempBlobFromReadyResultAsync(
+                        GuidGenerator.Create(),
+                        readyGif,
+                        $"{Path.GetFileNameWithoutExtension(file.FileName)}{gifSuffix}",
+                        gifMime,
+                        gifSuffix,
+                        $"{videoBlob.Name}.snapshot{gifSuffix}",
+                        sessionUnit,
+                        BlobRoles.Gif,
+                        parentBlobId: videoBlob.Id);
+                    content.GifBlobId = gifBlob.Id;
+                    content.GifUrl = await GetFileUrlAsync(gifBlob.Id, gifBlob.MimeType);
+                }
+
+                // 封面命中但封面缩略图缺失：直接从已就绪封面补生成缩略图并登记成品，跳过 FFmpeg
+                if (content.SnapshotBlobId.HasValue && !content.SnapshotThumbnailBlobId.HasValue && readySnap?.OutputStorageObjectId != null)
+                {
+                    var snapObj = await BlobManager.FindStorageObjectAsync(readySnap.OutputStorageObjectId.Value);
+                    if (snapObj != null && snapObj.Status == BlobObjectStatus.Ready)
+                    {
+                        var existingSnapBytes = await BlobManager.GetBytesAsync(snapObj.Container, snapObj.StorageName);
+                        var thumbSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
+                        var resized = await ImageResizer.ResizeAsync(existingSnapBytes, new ImageResizeArgs()
+                        {
+                            Width = (uint)thumbSize,
+                            Height = (uint)thumbSize,
+                            Mode = ImageResizeMode.Max
+                        });
+                        var snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
+                            ? resized.Result
+                            : existingSnapBytes;
+                        var snapSuffix = readySnap.OutputSuffix ?? ".png";
+                        var snapMime = readySnap.OutputMimeType ?? "image/png";
+                        var snapThumbBlob = await SavePrivateChatTempBlobAsync(
+                            GuidGenerator.Create(),
+                            snapThumbBytes,
+                            $"thumb_{Path.GetFileNameWithoutExtension(file.FileName)}{snapSuffix}",
+                            snapMime,
+                            snapSuffix,
+                            $"{videoBlob.Name}.thumbnail{snapSuffix}",
+                            sessionUnit,
+                            BlobRoles.SnapshotThumbnail,
+                            parentBlobId: videoBlob.Id);
+                        content.SnapshotThumbnailBlobId = snapThumbBlob.Id;
+                        content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapThumbBlob.Id, snapThumbBlob.MimeType);
+                        if (snapThumbBlob.StorageObjectId.HasValue)
+                        {
+                            await reuseManager.RecordReadyResultAsync(
+                                storageScope, videoBlob.Container, videoSha256, bytes.LongLength,
+                                AttachmentMediaType.Video, BlobRoles.SnapshotThumbnail, snapThumbRecipeHash,
+                                snapThumbBlob.StorageObjectId, snapThumbBlob.MimeType, snapThumbBlob.Suffix, snapThumbBlob.FileSize,
+                                readySnap.Width, readySnap.Height, readySnap.DurationMs);
+                        }
+                    }
+                }
+            }
+
+            if (!content.SnapshotBlobId.HasValue || !content.SnapshotThumbnailBlobId.HasValue)
+            {
+                await GenerateSnapshotAsync(videoBlob, content, sessionUnit, videoSha256);
+            }
         }
 
         var sendResult = await MessageSenderAppService.SendVideoAsync(sessionUnitId, new MessageInput<VideoContentInfo>()
@@ -537,20 +874,24 @@ public class MessageSenderController(
     }
 
     /// <summary>
-    /// 生成视频快照
+    /// 生成视频快照（仅抽静态封面与封面缩略图，GIF 交由后台任务异步生成，避免上传请求超时）
     /// </summary>
-    /// <param name="videoBlob"></param>
-    /// <param name="content"></param>
-    /// <param name="sessionUnit"></param>
-    /// <returns></returns>
-    protected virtual async Task GenerateSnapshotAsync(Blob videoBlob, VideoContentInfo content, SessionUnitCacheItem sessionUnit = null)
+    protected virtual Task GenerateSnapshotAsync(Blob videoBlob, VideoContentInfo content, SessionUnitCacheItem sessionUnit = null)
+        => GenerateSnapshotAsync(videoBlob, content, sessionUnit, precomputedVideoSha256: null);
+
+    protected virtual async Task GenerateSnapshotAsync(
+        Blob videoBlob,
+        VideoContentInfo content,
+        SessionUnitCacheItem sessionUnit,
+        string precomputedVideoSha256)
     {
-        //var videoFileName = Path.GetFileNameWithoutExtension(videoBlob.Name);
         var videoFileName = videoBlob.Name;
-
-        var directoryName = Path.GetDirectoryName(videoBlob.Name);
-
-        var mediaInfo = await MediaResolver.GetVideoInfoAsync(videoBlob.Bytes, videoBlob.FileName);
+        var mediaInfo = await MediaResolver.GetVideoInfoAsync(
+            videoBlob.Bytes,
+            videoBlob.FileName,
+            new VideoProcessOptions(
+                IncludeSnapshot: !content.SnapshotBlobId.HasValue,
+                IncludeGif: false));
 
         if (mediaInfo == null)
         {
@@ -558,80 +899,146 @@ public class MessageSenderController(
             return;
         }
 
+        var reuseManager = LazyServiceProvider.LazyGetService<IAttachmentProcessingReuseManager>();
+        var reuseEnabled = reuseManager?.IsEnabled() ?? false;
+        var storageScope = CurrentTenant.Id?.ToString("N") ?? "host";
+        var videoSha256 = reuseEnabled
+            ? (!string.IsNullOrWhiteSpace(precomputedVideoSha256)
+                ? precomputedVideoSha256
+                : await ResolveBlobSha256Async(videoBlob, videoBlob.Bytes, reuseManager))
+            : null;
+        var snapRecipeHash = reuseEnabled ? reuseManager.BuildVideoSnapshotRecipeHash(MessageSetting.VideoSetting) : null;
+        var snapThumbRecipeHash = reuseEnabled ? reuseManager.BuildVideoSnapshotThumbnailRecipeHash(MessageSetting.VideoSetting) : null;
+
         try
         {
+            var serverSnapWidth = mediaInfo.Width.GetValueOrDefault() > 0 ? mediaInfo.Width : (int?)null;
+            var serverSnapHeight = mediaInfo.Height.GetValueOrDefault() > 0 ? mediaInfo.Height : (int?)null;
+            var serverDurationMs = mediaInfo.Duration.HasValue ? (int)mediaInfo.Duration.Value.TotalMilliseconds : (int?)null;
+
             content.Width = mediaInfo.Width.GetValueOrDefault();
             content.Height = mediaInfo.Height.GetValueOrDefault();
 
             if (mediaInfo.Duration != null)
-                content.Duration = mediaInfo.Duration.Value.TotalSeconds;
-
-            if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath))
             {
-                var suffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
-                var snapBlob = await UploadToBlobStoreAsync(
-                    mediaInfo.ImageSnapshotPath,
-                    $"{videoFileName}.snapshot{suffix}",
-                    sessionUnit,
-                    BlobRoles.Snapshot,
-                    videoBlob.Id);
-                content.SnapshotBlobId = snapBlob.Id;
-                content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, videoBlob.MimeType);
-
-                using Image snapshotImg = new(snapBlob.Bytes);
-                content.ImageWidth = checked((int)snapshotImg.Width);
-                content.ImageHeight = checked((int)snapshotImg.Height);
-
-                (int width, int height) = GetImageActualDimensions(snapshotImg);
-                if (width > 0 && height > 0)
-                {
-                    content.Width = width;
-                    content.Height = height;
-                }
-
-                var thumbnailSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
-                var resizeder = await ImageResizer.ResizeAsync(snapBlob.Bytes, new ImageResizeArgs()
-                {
-                    Width = (uint)thumbnailSize,
-                    Height = (uint)thumbnailSize,
-                    Mode = ImageResizeMode.Max
-                });
-
-                if (resizeder.State == ImageProcessState.Unsupported)
-                    throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
-                var thumbnailResizedBytes = resizeder.Result;
-
-                var snapshotThumbnailBlobId = GuidGenerator.Create();
-                var snapshotThumbnailBlob = sessionUnit != null
-                    ? await SavePrivateChatTempBlobAsync(
-                        snapshotThumbnailBlobId,
-                        thumbnailResizedBytes,
-                        $"{videoBlob.FileName}",
-                        MimeTypes.GetByExtension(suffix),
-                        suffix,
-                        $"{videoFileName}.thumbnail{suffix}",
-                        sessionUnit,
-                        BlobRoles.SnapshotThumbnail,
-                        videoBlob.Id)
-                    : await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
-                    {
-                        IsPublic = false,
-                        FileSize = thumbnailResizedBytes.Length,
-                        MimeType = MimeTypes.GetByExtension(suffix),
-                        FileName = $"{videoBlob.FileName}",
-                        Name = $"{videoFileName}.thumbnail{suffix}",
-                        Suffix = suffix,
-                        Bytes = thumbnailResizedBytes,
-                        ParentBlobId = videoBlob.Id,
-                        Role = BlobRoles.SnapshotThumbnail,
-                        Status = BlobStatus.Temp,
-                    });
-
-                content.SnapshotThumbnailBlobId = snapshotThumbnailBlob.Id;
-                content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id, snapshotThumbnailBlob.MimeType);
+                content.Duration = mediaInfo.Duration.Value.TotalSeconds;
             }
 
-            if (!string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath))
+            if (!string.IsNullOrWhiteSpace(mediaInfo.ImageSnapshotPath) && System.IO.File.Exists(mediaInfo.ImageSnapshotPath))
+            {
+                var snapBytes = await System.IO.File.ReadAllBytesAsync(mediaInfo.ImageSnapshotPath);
+                var suffix = Path.GetExtension(mediaInfo.ImageSnapshotPath);
+                var snapMime = MimeTypes.GetByExtension(suffix);
+
+                using (Image snapshotImg = new(snapBytes))
+                {
+                    content.ImageWidth = checked((int)snapshotImg.Width);
+                    content.ImageHeight = checked((int)snapshotImg.Height);
+
+                    (int width, int height) = GetImageActualDimensions(snapshotImg);
+                    if (width > 0 && height > 0)
+                    {
+                        content.Width = width;
+                        content.Height = height;
+                        serverSnapWidth ??= width;
+                        serverSnapHeight ??= height;
+                    }
+                }
+
+                if (!content.SnapshotBlobId.HasValue)
+                {
+                    var snapBlob = sessionUnit != null
+                        ? await SavePrivateChatTempBlobAsync(
+                            GuidGenerator.Create(),
+                            snapBytes,
+                            $"{Path.GetFileNameWithoutExtension(videoBlob.FileName)}.snapshot{suffix}",
+                            snapMime,
+                            suffix,
+                            $"{videoFileName}.snapshot{suffix}",
+                            sessionUnit,
+                            BlobRoles.Snapshot,
+                            videoBlob.Id)
+                        : await UploadToBlobStoreAsync(
+                            mediaInfo.ImageSnapshotPath,
+                            $"{videoFileName}.snapshot{suffix}",
+                            sessionUnit,
+                            BlobRoles.Snapshot,
+                            videoBlob.Id);
+                    content.SnapshotBlobId = snapBlob.Id;
+                    content.SnapshotUrl = await GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);
+
+                    if (reuseEnabled && snapBlob.StorageObjectId.HasValue)
+                    {
+                        await reuseManager.RecordReadyResultAsync(
+                            storageScope, videoBlob.Container, videoSha256, videoBlob.Bytes.LongLength,
+                            AttachmentMediaType.Video, BlobRoles.Snapshot, snapRecipeHash,
+                            snapBlob.StorageObjectId, snapBlob.MimeType, snapBlob.Suffix, snapBlob.FileSize,
+                            serverSnapWidth, serverSnapHeight, serverDurationMs);
+                    }
+                }
+
+                if (!content.SnapshotThumbnailBlobId.HasValue)
+                {
+                    var thumbnailSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
+                    var resizeder = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs()
+                    {
+                        Width = (uint)thumbnailSize,
+                        Height = (uint)thumbnailSize,
+                        Mode = ImageResizeMode.Max
+                    });
+
+                    if (resizeder.State == ImageProcessState.Unsupported)
+                    {
+                        throw new Volo.Abp.UserFriendlyException("Unsupported image format.");
+                    }
+
+                    var thumbnailResizedBytes = resizeder.State == ImageProcessState.Done && resizeder.Result?.Length > 0
+                        ? resizeder.Result
+                        : snapBytes;
+
+                    var snapshotThumbnailBlobId = GuidGenerator.Create();
+                    var snapshotThumbnailBlob = sessionUnit != null
+                        ? await SavePrivateChatTempBlobAsync(
+                            snapshotThumbnailBlobId,
+                            thumbnailResizedBytes,
+                            $"{videoBlob.FileName}",
+                            snapMime,
+                            suffix,
+                            $"{videoFileName}.thumbnail{suffix}",
+                            sessionUnit,
+                            BlobRoles.SnapshotThumbnail,
+                            videoBlob.Id)
+                        : await BlobManager.CreateAsync(new Blob(snapshotThumbnailBlobId, ChatFilesContainer)
+                        {
+                            IsPublic = false,
+                            FileSize = thumbnailResizedBytes.Length,
+                            MimeType = snapMime,
+                            FileName = $"{videoBlob.FileName}",
+                            Name = $"{videoFileName}.thumbnail{suffix}",
+                            Suffix = suffix,
+                            Bytes = thumbnailResizedBytes,
+                            ParentBlobId = videoBlob.Id,
+                            Role = BlobRoles.SnapshotThumbnail,
+                            Status = BlobStatus.Temp,
+                        });
+
+                    content.SnapshotThumbnailBlobId = snapshotThumbnailBlob.Id;
+                    content.SnapshotThumbnailUrl = await GetFileUrlAsync(snapshotThumbnailBlob.Id, snapshotThumbnailBlob.MimeType);
+
+                    if (reuseEnabled && snapshotThumbnailBlob.StorageObjectId.HasValue)
+                    {
+                        await reuseManager.RecordReadyResultAsync(
+                            storageScope, videoBlob.Container, videoSha256, videoBlob.Bytes.LongLength,
+                            AttachmentMediaType.Video, BlobRoles.SnapshotThumbnail, snapThumbRecipeHash,
+                            snapshotThumbnailBlob.StorageObjectId, snapshotThumbnailBlob.MimeType, snapshotThumbnailBlob.Suffix, snapshotThumbnailBlob.FileSize,
+                            serverSnapWidth, serverSnapHeight, serverDurationMs);
+                    }
+                }
+            }
+
+            if (!content.GifBlobId.HasValue &&
+                !string.IsNullOrWhiteSpace(mediaInfo.GifSnapshotPath) &&
+                System.IO.File.Exists(mediaInfo.GifSnapshotPath))
             {
                 var gifBlob = await UploadToBlobStoreAsync(
                     mediaInfo.GifSnapshotPath,

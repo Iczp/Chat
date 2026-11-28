@@ -49,16 +49,44 @@ public class AttachmentController(
     protected string GetCurrentStorageScope() => CurrentTenant.Id?.ToString("N") ?? "host";
 
     protected string BuildVideoSnapshotRecipeHash()
-        => ProcessingReuseManager.ComputeRecipeHash(
-            $"v1|video-snapshot|{MessageSetting.VideoSetting.ImgCaptureSeconds}|{MessageSetting.VideoSetting.ImgSnapshotSize.Width}x{MessageSetting.VideoSetting.ImgSnapshotSize.Height}");
+        => ProcessingReuseManager.BuildVideoSnapshotRecipeHash(MessageSetting.VideoSetting);
 
     protected string BuildVideoSnapshotThumbRecipeHash()
-        => ProcessingReuseManager.ComputeRecipeHash(
-            $"v1|video-snap-thumb|{MessageSetting.VideoSetting.SnapshotThumbnailSize}|{BuildVideoSnapshotRecipeHash()}");
+        => ProcessingReuseManager.BuildVideoSnapshotThumbnailRecipeHash(MessageSetting.VideoSetting);
+
+    protected string BuildVideoClientSnapshotThumbRecipeHash()
+        => ProcessingReuseManager.BuildVideoClientSnapshotThumbnailRecipeHash(MessageSetting.VideoSetting);
 
     protected string BuildVideoGifRecipeHash()
-        => ProcessingReuseManager.ComputeRecipeHash(
-            $"v1|video-gif|{MessageSetting.VideoSetting.ImgCaptureSeconds}|{MessageSetting.VideoSetting.GifSeconds}|{MessageSetting.VideoSetting.GifSnapshotSize.Width}x{MessageSetting.VideoSetting.GifSnapshotSize.Height}");
+        => ProcessingReuseManager.BuildVideoGifRecipeHash(MessageSetting.VideoSetting);
+
+    protected static string FormatCacheableImageMetadata(string profile)
+        => !string.IsNullOrWhiteSpace(profile) && profile.Length <= 2000 ? profile : null;
+
+    protected virtual async Task<string> ResolveBlobSha256Async(Blob blob, byte[] bytes)
+    {
+        if (!string.IsNullOrWhiteSpace(blob?.ContentSha256))
+        {
+            return blob.ContentSha256;
+        }
+
+        if (!string.IsNullOrWhiteSpace(blob?.StorageObject?.Sha256))
+        {
+            return blob.StorageObject.Sha256;
+        }
+
+        if (blob?.StorageObjectId != null)
+        {
+            var storageObj = await BlobManager.FindStorageObjectAsync(blob.StorageObjectId.Value);
+            if (!string.IsNullOrWhiteSpace(storageObj?.Sha256))
+            {
+                blob.ContentSha256 = storageObj.Sha256;
+                return storageObj.Sha256;
+            }
+        }
+
+        return ProcessingReuseManager.ComputeSha256(bytes);
+    }
 
     protected virtual async Task<SessionUnitCacheItem> GetAndCheckSessionUnitAsync(Guid sessionUnitId)
     {
@@ -88,7 +116,8 @@ public class AttachmentController(
         SessionUnitCacheItem unit,
         AttachmentMediaType mediaType,
         BlobRoles role,
-        Guid? parentBlobId = null)
+        Guid? parentBlobId = null,
+        string contentSha256 = null)
     {
         var directoryName = await BlobResolver.GetDirectoryNameAsync(new BlobContext
         {
@@ -116,6 +145,7 @@ public class AttachmentController(
             Name = blobName,
             Suffix = suffix,
             Bytes = bytes,
+            ContentSha256 = contentSha256,
             UploaderChatObjectId = unit.OwnerId,
             UploadSessionUnitId = unit.Id,
             UploadSessionId = unit.SessionId,
@@ -206,206 +236,233 @@ public class AttachmentController(
         });
 
         var sourceBytes = await file.GetAllBytesAsync();
-        using var sourceImage = new Image(sourceBytes);
-        var (actualWidth, actualHeight) = GetImageActualDimensions(sourceImage);
+        Image sourceImage = null;
+        Image GetOrDecodeSourceImage() => sourceImage ??= new Image(sourceBytes);
 
-        var primaryBlobId = GuidGenerator.Create();
-        Guid? originalBlobId = null;
-        string originalUrl = null;
-
-        var reuseEnabled = ProcessingReuseManager.IsEnabled();
-        var storageScope = GetCurrentStorageScope();
-        var sourceSha256 = reuseEnabled ? ProcessingReuseManager.ComputeSha256(sourceBytes) : null;
-        var bigImageSize = MessageSetting.ImageSetting.BigSize;
-        var primaryRecipeHash = reuseEnabled
-            ? ProcessingReuseManager.ComputeRecipeHash($"v1|img-primary|{bigImageSize}")
-            : null;
-        var thumbSize = MessageSetting.ImageSetting.ThumbnailSize;
-        var thumbRecipeHash = reuseEnabled
-            ? ProcessingReuseManager.ComputeRecipeHash($"v1|img-thumb|{thumbSize}|{primaryRecipeHash}")
-            : null;
-
-        if (isOriginal)
+        try
         {
-            // 原图模式下同时保留 Original（原图）和 Primary（高清压缩图）
-            originalBlobId = GuidGenerator.Create();
-            var originalBlob = await SaveTempBlobAsync(
-                originalBlobId.Value,
-                sourceBytes,
-                file.FileName,
-                file.ContentType,
-                suffix,
-                unit,
-                AttachmentMediaType.Image,
-                BlobRoles.Original,
-                parentBlobId: primaryBlobId);
-            originalUrl = await GetFileUrlAsync(originalBlob.Id, originalBlob.MimeType);
-        }
+            var primaryBlobId = GuidGenerator.Create();
+            Guid? originalBlobId = null;
+            string originalUrl = null;
 
-        byte[] primaryBytes = null;
-        int primaryWidth = actualWidth;
-        int primaryHeight = actualHeight;
-        Blob primaryBlob = null;
+            var reuseEnabled = ProcessingReuseManager.IsEnabled();
+            var storageScope = GetCurrentStorageScope();
+            var sourceSha256 = reuseEnabled ? ProcessingReuseManager.ComputeSha256(sourceBytes) : null;
+            var bigImageSize = MessageSetting.ImageSetting.BigSize;
+            var primaryRecipeHash = reuseEnabled
+                ? ProcessingReuseManager.BuildImagePrimaryRecipeHash(MessageSetting.ImageSetting)
+                : null;
+            var thumbSize = MessageSetting.ImageSetting.ThumbnailSize;
+            var thumbRecipeHash = reuseEnabled
+                ? ProcessingReuseManager.BuildImageThumbnailRecipeHash(MessageSetting.ImageSetting)
+                : null;
 
-        if (reuseEnabled)
-        {
-            var readyPrimary = await ProcessingReuseManager.FindReadyResultAsync(
-                storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
-                AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash);
-            if (readyPrimary?.OutputStorageObjectId != null)
+            if (isOriginal)
             {
-                primaryBlob = await SaveTempBlobFromReadyResultAsync(
-                    primaryBlobId, readyPrimary, file.FileName,
-                    unit, AttachmentMediaType.Image, BlobRoles.Primary);
-                primaryWidth = readyPrimary.Width ?? actualWidth;
-                primaryHeight = readyPrimary.Height ?? actualHeight;
-            }
-        }
-
-        if (primaryBlob == null)
-        {
-            var resized = await ImageResizer.ResizeAsync(sourceBytes, new ImageResizeArgs
-            {
-                Width = (uint)bigImageSize,
-                Height = (uint)bigImageSize,
-                Mode = ImageResizeMode.Max,
-            });
-            if (!isOriginal && resized.State == ImageProcessState.Unsupported)
-            {
-                throw new UserFriendlyException("Unsupported image format.");
-            }
-            primaryBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
-                ? resized.Result
-                : sourceBytes;
-
-            if (primaryBytes != sourceBytes)
-            {
-                using var primaryImg = new Image(primaryBytes);
-                (primaryWidth, primaryHeight) = GetImageActualDimensions(primaryImg);
-            }
-
-            primaryBlob = await SaveTempBlobAsync(
-                primaryBlobId,
-                primaryBytes,
-                file.FileName,
-                file.ContentType,
-                suffix,
-                unit,
-                AttachmentMediaType.Image,
-                BlobRoles.Primary);
-
-            if (reuseEnabled && primaryBlob.StorageObjectId.HasValue)
-            {
-                await ProcessingReuseManager.RecordReadyResultAsync(
-                    storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
-                    AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash,
-                    primaryBlob.StorageObjectId, primaryBlob.MimeType, primaryBlob.Suffix, primaryBlob.FileSize,
-                    primaryWidth, primaryHeight, null);
-            }
-        }
-
-        // 缩略图：优先采用前端上传的 thumbnailFile，否则查成品或服务端兜底生成
-        var thumbBlobId = GuidGenerator.Create();
-        Blob thumbBlob = null;
-        if (thumbnailFile != null && thumbnailFile.Length > 0)
-        {
-            var thumbSuffix = GetExtension(thumbnailFile.ContentType, thumbnailFile.FileName);
-            await validatorManager.ValidateAsync(new AttachmentUploadValidationContext
-            {
-                SessionUnit = unit,
-                MediaType = AttachmentMediaType.Snapshot,
-                FileName = thumbnailFile.FileName,
-                ContentType = thumbnailFile.ContentType,
-                Suffix = thumbSuffix,
-                FileSize = thumbnailFile.Length,
-                OpenReadStreamAsync = _ => Task.FromResult(thumbnailFile.OpenReadStream()),
-            });
-            var thumbBytes = await thumbnailFile.GetAllBytesAsync();
-            thumbBlob = await SaveTempBlobAsync(
-                thumbBlobId,
-                thumbBytes,
-                $"thumb_{file.FileName}",
-                thumbnailFile.ContentType,
-                thumbSuffix,
-                unit,
-                AttachmentMediaType.Image,
-                BlobRoles.Thumbnail,
-                parentBlobId: primaryBlob.Id);
-        }
-        else
-        {
-            if (reuseEnabled)
-            {
-                var readyThumb = await ProcessingReuseManager.FindReadyResultAsync(
-                    storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
-                    AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash);
-                if (readyThumb?.OutputStorageObjectId != null)
-                {
-                    thumbBlob = await SaveTempBlobFromReadyResultAsync(
-                        thumbBlobId, readyThumb, $"thumb_{file.FileName}",
-                        unit, AttachmentMediaType.Image, BlobRoles.Thumbnail, parentBlobId: primaryBlob.Id);
-                }
-            }
-
-            if (thumbBlob == null)
-            {
-                if (primaryBytes == null)
-                {
-                    var (pContainer, pName) = await BlobManager.ResolvePhysicalLocationAsync(primaryBlob);
-                    primaryBytes = await BlobManager.GetBytesAsync(pContainer, pName);
-                }
-                var resizedThumb = await ImageResizer.ResizeAsync(primaryBytes, new ImageResizeArgs
-                {
-                    Width = (uint)thumbSize,
-                    Height = (uint)thumbSize,
-                    Mode = ImageResizeMode.Max,
-                });
-                var thumbBytes = resizedThumb.State == ImageProcessState.Done && resizedThumb.Result?.Length > 0
-                    ? resizedThumb.Result
-                    : primaryBytes;
-
-                thumbBlob = await SaveTempBlobAsync(
-                    thumbBlobId,
-                    thumbBytes,
-                    $"thumb_{file.FileName}",
+                // 原图模式下同时保留 Original（原图）和 Primary（高清压缩图）
+                originalBlobId = GuidGenerator.Create();
+                var originalBlob = await SaveTempBlobAsync(
+                    originalBlobId.Value,
+                    sourceBytes,
+                    file.FileName,
                     file.ContentType,
                     suffix,
                     unit,
                     AttachmentMediaType.Image,
-                    BlobRoles.Thumbnail,
-                    parentBlobId: primaryBlob.Id);
+                    BlobRoles.Original,
+                    parentBlobId: primaryBlobId,
+                    contentSha256: sourceSha256);
+                originalUrl = await GetFileUrlAsync(originalBlob.Id, originalBlob.MimeType);
+            }
 
-                if (reuseEnabled && thumbBlob.StorageObjectId.HasValue)
+            byte[] primaryBytes = null;
+            int? primaryWidth = null;
+            int? primaryHeight = null;
+            string profile = null;
+            Blob primaryBlob = null;
+
+            if (reuseEnabled)
+            {
+                var readyPrimary = await ProcessingReuseManager.FindReadyResultAsync(
+                    storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
+                    AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash);
+                if (readyPrimary?.OutputStorageObjectId != null)
+                {
+                    primaryBlob = await SaveTempBlobFromReadyResultAsync(
+                        primaryBlobId, readyPrimary, file.FileName,
+                        unit, AttachmentMediaType.Image, BlobRoles.Primary);
+                    primaryWidth = readyPrimary.Width;
+                    primaryHeight = readyPrimary.Height;
+                    profile = readyPrimary.MetadataJson;
+                }
+            }
+
+            if (primaryBlob == null)
+            {
+                var resized = await ImageResizer.ResizeAsync(sourceBytes, new ImageResizeArgs
+                {
+                    Width = (uint)bigImageSize,
+                    Height = (uint)bigImageSize,
+                    Mode = ImageResizeMode.Max,
+                });
+                if (!isOriginal && resized.State == ImageProcessState.Unsupported)
+                {
+                    throw new UserFriendlyException("Unsupported image format.");
+                }
+                primaryBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
+                    ? resized.Result
+                    : sourceBytes;
+
+                if (!ReferenceEquals(primaryBytes, sourceBytes))
+                {
+                    using var primaryImg = new Image(primaryBytes);
+                    (primaryWidth, primaryHeight) = GetImageActualDimensions(primaryImg);
+                }
+                else
+                {
+                    (primaryWidth, primaryHeight) = GetImageActualDimensions(GetOrDecodeSourceImage());
+                }
+
+                profile = GetImageProfileJson(GetOrDecodeSourceImage());
+
+                primaryBlob = await SaveTempBlobAsync(
+                    primaryBlobId,
+                    primaryBytes,
+                    file.FileName,
+                    file.ContentType,
+                    suffix,
+                    unit,
+                    AttachmentMediaType.Image,
+                    BlobRoles.Primary,
+                    contentSha256: ReferenceEquals(primaryBytes, sourceBytes) ? sourceSha256 : null);
+
+                if (reuseEnabled && primaryBlob.StorageObjectId.HasValue)
                 {
                     await ProcessingReuseManager.RecordReadyResultAsync(
                         storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
-                        AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash,
-                        thumbBlob.StorageObjectId, thumbBlob.MimeType, thumbBlob.Suffix, thumbBlob.FileSize,
-                        null, null, null);
+                        AttachmentMediaType.Image, BlobRoles.Primary, primaryRecipeHash,
+                        primaryBlob.StorageObjectId, primaryBlob.MimeType, primaryBlob.Suffix, primaryBlob.FileSize,
+                        primaryWidth, primaryHeight, null,
+                        metadataJson: FormatCacheableImageMetadata(profile));
                 }
             }
-        }
 
-        var profile = GetImageProfileJson(sourceImage);
-        return new UploadAttachmentOutput
+            // 缩略图：优先采用前端上传的 thumbnailFile，否则查成品或服务端兜底生成
+            var thumbBlobId = GuidGenerator.Create();
+            Blob thumbBlob = null;
+            if (thumbnailFile != null && thumbnailFile.Length > 0)
+            {
+                var thumbSuffix = GetExtension(thumbnailFile.ContentType, thumbnailFile.FileName);
+                await validatorManager.ValidateAsync(new AttachmentUploadValidationContext
+                {
+                    SessionUnit = unit,
+                    MediaType = AttachmentMediaType.Snapshot,
+                    FileName = thumbnailFile.FileName,
+                    ContentType = thumbnailFile.ContentType,
+                    Suffix = thumbSuffix,
+                    FileSize = thumbnailFile.Length,
+                    OpenReadStreamAsync = _ => Task.FromResult(thumbnailFile.OpenReadStream()),
+                });
+                var thumbBytes = await thumbnailFile.GetAllBytesAsync();
+                thumbBlob = await SaveTempBlobAsync(
+                    thumbBlobId,
+                    thumbBytes,
+                    $"thumb_{file.FileName}",
+                    thumbnailFile.ContentType,
+                    thumbSuffix,
+                    unit,
+                    AttachmentMediaType.Image,
+                    BlobRoles.Thumbnail,
+                    parentBlobId: primaryBlob.Id);
+            }
+            else
+            {
+                if (reuseEnabled)
+                {
+                    var readyThumb = await ProcessingReuseManager.FindReadyResultAsync(
+                        storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
+                        AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash);
+                    if (readyThumb?.OutputStorageObjectId != null)
+                    {
+                        thumbBlob = await SaveTempBlobFromReadyResultAsync(
+                            thumbBlobId, readyThumb, $"thumb_{file.FileName}",
+                            unit, AttachmentMediaType.Image, BlobRoles.Thumbnail, parentBlobId: primaryBlob.Id);
+                    }
+                }
+
+                if (thumbBlob == null)
+                {
+                    if (primaryBytes == null)
+                    {
+                        var (pContainer, pName) = await BlobManager.ResolvePhysicalLocationAsync(primaryBlob);
+                        primaryBytes = await BlobManager.GetBytesAsync(pContainer, pName);
+                    }
+                    var resizedThumb = await ImageResizer.ResizeAsync(primaryBytes, new ImageResizeArgs
+                    {
+                        Width = (uint)thumbSize,
+                        Height = (uint)thumbSize,
+                        Mode = ImageResizeMode.Max,
+                    });
+                    var thumbBytes = resizedThumb.State == ImageProcessState.Done && resizedThumb.Result?.Length > 0
+                        ? resizedThumb.Result
+                        : primaryBytes;
+
+                    thumbBlob = await SaveTempBlobAsync(
+                        thumbBlobId,
+                        thumbBytes,
+                        $"thumb_{file.FileName}",
+                        file.ContentType,
+                        suffix,
+                        unit,
+                        AttachmentMediaType.Image,
+                        BlobRoles.Thumbnail,
+                        parentBlobId: primaryBlob.Id,
+                        contentSha256: ReferenceEquals(thumbBytes, sourceBytes) ? sourceSha256 : null);
+
+                    if (reuseEnabled && thumbBlob.StorageObjectId.HasValue)
+                    {
+                        await ProcessingReuseManager.RecordReadyResultAsync(
+                            storageScope, ChatFilesContainer, sourceSha256, sourceBytes.LongLength,
+                            AttachmentMediaType.Image, BlobRoles.Thumbnail, thumbRecipeHash,
+                            thumbBlob.StorageObjectId, thumbBlob.MimeType, thumbBlob.Suffix, thumbBlob.FileSize,
+                            null, null, null);
+                    }
+                }
+            }
+
+            if (!primaryWidth.HasValue || !primaryHeight.HasValue)
+            {
+                var (actualWidth, actualHeight) = GetImageActualDimensions(GetOrDecodeSourceImage());
+                primaryWidth ??= actualWidth;
+                primaryHeight ??= actualHeight;
+            }
+
+            profile ??= GetImageProfileJson(GetOrDecodeSourceImage());
+
+            return new UploadAttachmentOutput
+            {
+                BlobId = primaryBlob.Id,
+                MediaType = AttachmentMediaType.Image,
+                Url = await GetFileUrlAsync(primaryBlob.Id, primaryBlob.MimeType),
+                ThumbnailBlobId = thumbBlob.Id,
+                ThumbnailUrl = await GetFileUrlAsync(thumbBlob.Id, thumbBlob.MimeType),
+                OriginalBlobId = originalBlobId,
+                OriginalUrl = originalUrl,
+                FileName = primaryBlob.FileName,
+                ContentType = primaryBlob.MimeType,
+                Suffix = primaryBlob.Suffix,
+                Size = isOriginal ? sourceBytes.Length : primaryBlob.FileSize,
+                Width = primaryWidth,
+                Height = primaryHeight,
+                Profile = profile,
+                ExpireTime = primaryBlob.ExpireTime,
+                ReuseToken = IssueReuseToken(primaryBlob.Id, AttachmentMediaType.Image, primaryWidth, primaryHeight, null, profile, primaryBlob.ExpireTime),
+            };
+        }
+        finally
         {
-            BlobId = primaryBlob.Id,
-            MediaType = AttachmentMediaType.Image,
-            Url = await GetFileUrlAsync(primaryBlob.Id, primaryBlob.MimeType),
-            ThumbnailBlobId = thumbBlob.Id,
-            ThumbnailUrl = await GetFileUrlAsync(thumbBlob.Id, thumbBlob.MimeType),
-            OriginalBlobId = originalBlobId,
-            OriginalUrl = originalUrl,
-            FileName = primaryBlob.FileName,
-            ContentType = primaryBlob.MimeType,
-            Suffix = primaryBlob.Suffix,
-            Size = isOriginal ? sourceBytes.Length : primaryBlob.FileSize,
-            Width = primaryWidth,
-            Height = primaryHeight,
-            Profile = profile,
-            ExpireTime = primaryBlob.ExpireTime,
-            ReuseToken = IssueReuseToken(primaryBlob.Id, AttachmentMediaType.Image, primaryWidth, primaryHeight, null, profile, primaryBlob.ExpireTime),
-        };
+            sourceImage?.Dispose();
+        }
     }
 
     [HttpPost]
@@ -456,6 +513,10 @@ public class AttachmentController(
             unit,
             AttachmentMediaType.Video,
             isOriginal ? BlobRoles.Original : BlobRoles.Primary);
+
+        var reuseEnabled = ProcessingReuseManager.IsEnabled();
+        var storageScope = GetCurrentStorageScope();
+        var videoSha256 = reuseEnabled ? await ResolveBlobSha256Async(videoBlob, videoBytes) : null;
 
         Guid? snapshotBlobId = null;
         string snapshotUrl = null;
@@ -516,12 +577,10 @@ public class AttachmentController(
             snapshotBlobId = snapBlob.Id;
             snapshotUrl = await GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);
 
-            byte[] snapThumbBytes;
-            string snapThumbMime = snapshotFile.ContentType;
-            string snapThumbSuffix = snapSuffix;
+            Blob snapThumbBlob = null;
             if (snapshotThumbnailFile != null && snapshotThumbnailFile.Length > 0)
             {
-                snapThumbSuffix = GetExtension(snapshotThumbnailFile.ContentType, snapshotThumbnailFile.FileName);
+                var snapThumbSuffix = GetExtension(snapshotThumbnailFile.ContentType, snapshotThumbnailFile.FileName);
                 await validatorManager.ValidateAsync(new AttachmentUploadValidationContext
                 {
                     SessionUnit = unit,
@@ -532,49 +591,108 @@ public class AttachmentController(
                     FileSize = snapshotThumbnailFile.Length,
                     OpenReadStreamAsync = _ => Task.FromResult(snapshotThumbnailFile.OpenReadStream()),
                 });
-                snapThumbBytes = await snapshotThumbnailFile.GetAllBytesAsync();
-                snapThumbMime = snapshotThumbnailFile.ContentType;
+                var snapThumbBytes = await snapshotThumbnailFile.GetAllBytesAsync();
+                snapThumbBlob = await SaveTempBlobAsync(
+                    GuidGenerator.Create(),
+                    snapThumbBytes,
+                    $"thumb_{snapshotFile.FileName}",
+                    snapshotThumbnailFile.ContentType,
+                    snapThumbSuffix,
+                    unit,
+                    AttachmentMediaType.Snapshot,
+                    BlobRoles.SnapshotThumbnail,
+                    parentBlobId: videoBlob.Id);
             }
             else
             {
-                var thumbSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
-                if (resolvedWidth.HasValue && resolvedHeight.HasValue &&
-                    resolvedWidth.Value <= thumbSize && resolvedHeight.Value <= thumbSize)
+                var snapSha256 = reuseEnabled ? await ResolveBlobSha256Async(snapBlob, snapBytes) : null;
+                var clientSnapThumbRecipeHash = reuseEnabled ? BuildVideoClientSnapshotThumbRecipeHash() : null;
+
+                if (reuseEnabled)
                 {
-                    snapThumbBytes = snapBytes;
-                }
-                else
-                {
-                    var resized = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs
+                    var readyClientSnapThumb = await ProcessingReuseManager.FindReadyResultAsync(
+                        storageScope,
+                        ChatFilesContainer,
+                        snapSha256,
+                        snapBytes.LongLength,
+                        AttachmentMediaType.Snapshot,
+                        BlobRoles.SnapshotThumbnail,
+                        clientSnapThumbRecipeHash);
+                    if (readyClientSnapThumb?.OutputStorageObjectId != null)
                     {
-                        Width = (uint)thumbSize,
-                        Height = (uint)thumbSize,
-                        Mode = ImageResizeMode.Max,
-                    });
-                    snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
-                        ? resized.Result
-                        : snapBytes;
+                        snapThumbBlob = await SaveTempBlobFromReadyResultAsync(
+                            GuidGenerator.Create(),
+                            readyClientSnapThumb,
+                            $"thumb_{snapshotFile.FileName}",
+                            unit,
+                            AttachmentMediaType.Snapshot,
+                            BlobRoles.SnapshotThumbnail,
+                            parentBlobId: videoBlob.Id);
+                    }
+                }
+
+                if (snapThumbBlob == null)
+                {
+                    byte[] snapThumbBytes;
+                    var thumbSize = MessageSetting.VideoSetting.SnapshotThumbnailSize;
+                    if (resolvedWidth.HasValue && resolvedHeight.HasValue &&
+                        resolvedWidth.Value <= thumbSize && resolvedHeight.Value <= thumbSize)
+                    {
+                        snapThumbBytes = snapBytes;
+                    }
+                    else
+                    {
+                        var resized = await ImageResizer.ResizeAsync(snapBytes, new ImageResizeArgs
+                        {
+                            Width = (uint)thumbSize,
+                            Height = (uint)thumbSize,
+                            Mode = ImageResizeMode.Max,
+                        });
+                        snapThumbBytes = resized.State == ImageProcessState.Done && resized.Result?.Length > 0
+                            ? resized.Result
+                            : snapBytes;
+                    }
+
+                    snapThumbBlob = await SaveTempBlobAsync(
+                        GuidGenerator.Create(),
+                        snapThumbBytes,
+                        $"thumb_{snapshotFile.FileName}",
+                        snapshotFile.ContentType,
+                        snapSuffix,
+                        unit,
+                        AttachmentMediaType.Snapshot,
+                        BlobRoles.SnapshotThumbnail,
+                        parentBlobId: videoBlob.Id,
+                        contentSha256: ReferenceEquals(snapThumbBytes, snapBytes) ? snapSha256 : null);
+
+                    if (reuseEnabled && snapThumbBlob.StorageObjectId.HasValue)
+                    {
+                        await ProcessingReuseManager.RecordReadyResultAsync(
+                            storageScope,
+                            ChatFilesContainer,
+                            snapSha256,
+                            snapBytes.LongLength,
+                            AttachmentMediaType.Snapshot,
+                            BlobRoles.SnapshotThumbnail,
+                            clientSnapThumbRecipeHash,
+                            snapThumbBlob.StorageObjectId,
+                            snapThumbBlob.MimeType,
+                            snapThumbBlob.Suffix,
+                            snapThumbBlob.FileSize,
+                            null,
+                            null,
+                            null);
+                    }
                 }
             }
 
-            var snapThumbBlob = await SaveTempBlobAsync(
-                GuidGenerator.Create(),
-                snapThumbBytes,
-                $"thumb_{snapshotFile.FileName}",
-                snapThumbMime,
-                snapThumbSuffix,
-                unit,
-                AttachmentMediaType.Snapshot,
-                BlobRoles.SnapshotThumbnail,
-                parentBlobId: videoBlob.Id);
             snapshotThumbBlobId = snapThumbBlob.Id;
             snapshotThumbUrl = await GetFileUrlAsync(snapThumbBlob.Id, snapThumbBlob.MimeType);
 
-            if (MessageSetting.VideoSetting.IsGenerateSnapshot && ProcessingReuseManager.IsEnabled())
+            if (MessageSetting.VideoSetting.IsGenerateSnapshot && reuseEnabled)
             {
-                var videoSha256 = ProcessingReuseManager.ComputeSha256(videoBytes);
                 var readyGif = await ProcessingReuseManager.FindReadyResultAsync(
-                    GetCurrentStorageScope(),
+                    storageScope,
                     ChatFilesContainer,
                     videoSha256,
                     videoBytes.LongLength,
@@ -605,7 +723,8 @@ public class AttachmentController(
                 videoBlob.Id,
                 resolvedWidth,
                 resolvedHeight,
-                resolvedDurationMs);
+                resolvedDurationMs,
+                videoSha256);
             snapshotBlobId = fallback.SnapshotBlobId;
             snapshotUrl = fallback.SnapshotUrl;
             snapshotThumbBlobId = fallback.SnapshotThumbnailBlobId;
@@ -652,7 +771,7 @@ public class AttachmentController(
         int? DurationMs);
 
     /// <summary>
-    /// 客户端未携带封面时，由服务端兜底抽帧生成封面与封面缩略图
+    /// 客户端未携带封面时，由服务端兜底抽帧生成封面与封面缩略图（不在此同步转 GIF，GIF 统一交由后台异步生成）
     /// </summary>
     protected virtual async Task<VideoSnapshotFallbackResult> GenerateVideoSnapshotFallbackAsync(
         byte[] videoBytes,
@@ -661,7 +780,8 @@ public class AttachmentController(
         Guid videoBlobId,
         int? currentWidth,
         int? currentHeight,
-        int? currentDurationMs)
+        int? currentDurationMs,
+        string precomputedVideoSha256 = null)
     {
         Guid? snapshotBlobId = null;
         string snapshotUrl = null;
@@ -675,7 +795,9 @@ public class AttachmentController(
 
         var reuseEnabled = ProcessingReuseManager.IsEnabled();
         var storageScope = GetCurrentStorageScope();
-        var videoSha256 = reuseEnabled ? ProcessingReuseManager.ComputeSha256(videoBytes) : null;
+        var videoSha256 = reuseEnabled
+            ? (!string.IsNullOrWhiteSpace(precomputedVideoSha256) ? precomputedVideoSha256 : ProcessingReuseManager.ComputeSha256(videoBytes))
+            : null;
         var snapRecipeHash = reuseEnabled ? BuildVideoSnapshotRecipeHash() : null;
         var snapThumbRecipeHash = reuseEnabled ? BuildVideoSnapshotThumbRecipeHash() : null;
         var gifRecipeHash = reuseEnabled ? BuildVideoGifRecipeHash() : null;
@@ -692,14 +814,6 @@ public class AttachmentController(
                     unit, AttachmentMediaType.Snapshot, BlobRoles.Snapshot, parentBlobId: videoBlobId);
                 snapshotBlobId = snapBlob.Id;
                 snapshotUrl = await GetFileUrlAsync(snapBlob.Id, snapBlob.MimeType);
-                if (reuseEnabled && snapBlob.StorageObjectId.HasValue)
-                {
-                    await ProcessingReuseManager.RecordReadyResultAsync(
-                        storageScope, ChatFilesContainer, videoSha256, videoBytes.LongLength,
-                        AttachmentMediaType.Video, BlobRoles.Snapshot, snapRecipeHash,
-                        snapBlob.StorageObjectId, snapBlob.MimeType, snapBlob.Suffix, snapBlob.FileSize,
-                        resolvedWidth, resolvedHeight, resolvedDurationMs);
-                }
                 resolvedWidth ??= readySnap.Width;
                 resolvedHeight ??= readySnap.Height;
                 resolvedDurationMs ??= readySnap.DurationMs;
@@ -770,7 +884,7 @@ public class AttachmentController(
                 }
             }
 
-            if (snapshotBlobId.HasValue && snapshotThumbBlobId.HasValue && gifBlobId.HasValue)
+            if (snapshotBlobId.HasValue && snapshotThumbBlobId.HasValue)
             {
                 return new VideoSnapshotFallbackResult(
                     snapshotBlobId, snapshotUrl,
@@ -780,12 +894,13 @@ public class AttachmentController(
             }
         }
 
+        // 上传阶段仅抽静态封面与封面缩略图，GIF 统一交由消息发送后的 GenerateVideoGifBackgroundJob 异步生成，避免 HTTP 超时
         var mediaInfo = await mediaResolver.GetVideoInfoAsync(
             videoBytes,
             fileName,
             new VideoProcessOptions(
                 IncludeSnapshot: !snapshotBlobId.HasValue,
-                IncludeGif: !gifBlobId.HasValue));
+                IncludeGif: false));
         if (mediaInfo == null)
         {
             return new VideoSnapshotFallbackResult(
@@ -986,7 +1101,7 @@ public class AttachmentController(
         var reuseEnabled = ProcessingReuseManager.IsEnabled();
         var storageScope = GetCurrentStorageScope();
         var soundSha256 = reuseEnabled ? ProcessingReuseManager.ComputeSha256(bytes) : null;
-        var soundProbeRecipeHash = reuseEnabled ? ProcessingReuseManager.ComputeRecipeHash("v1|sound-probe") : null;
+        var soundProbeRecipeHash = reuseEnabled ? ProcessingReuseManager.BuildSoundProbeRecipeHash() : null;
         var probedOnServer = false;
 
         if (!resolvedDurationMs.HasValue)
@@ -1005,7 +1120,7 @@ public class AttachmentController(
             if (!resolvedDurationMs.HasValue)
             {
                 var audioInfo = await mediaResolver.GetAudioInfoAsync(bytes, file.FileName);
-                if (audioInfo?.Duration != null)
+                if (audioInfo?.Duration != null && audioInfo.Duration.Value > TimeSpan.Zero)
                 {
                     resolvedDurationMs = (int)audioInfo.Duration.Value.TotalMilliseconds;
                     probedOnServer = true;
@@ -1021,7 +1136,8 @@ public class AttachmentController(
             suffix,
             unit,
             AttachmentMediaType.Sound,
-            BlobRoles.Primary);
+            BlobRoles.Primary,
+            contentSha256: soundSha256);
 
         if (reuseEnabled && probedOnServer && resolvedDurationMs.HasValue && soundBlob.StorageObjectId.HasValue)
         {

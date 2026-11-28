@@ -60,6 +60,7 @@ public class GenerateVideoGifBackgroundJob(
                 args.MessageId,
                 message != null,
                 message?.IsRollbacked);
+            await SkipWaiterAndEnqueueNextAsync(args.MessageId);
             return;
         }
 
@@ -69,6 +70,7 @@ public class GenerateVideoGifBackgroundJob(
             Logger.LogInformation(
                 "GenerateVideoGifBackgroundJob skipped: VideoContent missing. MessageId={MessageId}",
                 args.MessageId);
+            await SkipWaiterAndEnqueueNextAsync(args.MessageId);
             return;
         }
 
@@ -86,6 +88,7 @@ public class GenerateVideoGifBackgroundJob(
                 GifBlobId = videoContent.GifBlobId.Value,
                 GifUrl = existingGifUrl,
             });
+            await CompleteWaiterAndBackfillAsync(message.Id);
             return;
         }
 
@@ -404,6 +407,67 @@ public class GenerateVideoGifBackgroundJob(
                 GifBlobId = reusedGifBlob.Id,
                 GifUrl = reusedGifUrl,
             });
+        }
+    }
+
+    private async Task SkipWaiterAndEnqueueNextAsync(long messageId)
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var reuseManager = scope.ServiceProvider.GetService<IAttachmentProcessingReuseManager>();
+        if (reuseManager == null || !reuseManager.IsEnabled())
+        {
+            return;
+        }
+
+        var resultIds = await reuseManager.MarkWaiterStatusByMessageAsync(
+            messageId,
+            BlobRoles.Gif,
+            AttachmentProcessingWaiterStatus.Skipped);
+        if (resultIds.Count == 0)
+        {
+            return;
+        }
+
+        var jobManager = scope.ServiceProvider.GetService<IBackgroundJobManager>();
+        if (jobManager == null)
+        {
+            return;
+        }
+
+        foreach (var resultId in resultIds)
+        {
+            var nextWaiters = await reuseManager.GetPendingWaitersAsync(resultId, maxCount: 1);
+            if (nextWaiters.Count > 0)
+            {
+                await jobManager.EnqueueAsync(new GenerateVideoGifArgs
+                {
+                    MessageId = nextWaiters[0].MessageId,
+                    VideoBlobId = nextWaiters[0].PrimaryBlobId,
+                });
+            }
+        }
+    }
+
+    private async Task CompleteWaiterAndBackfillAsync(long messageId)
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var reuseManager = scope.ServiceProvider.GetService<IAttachmentProcessingReuseManager>();
+        if (reuseManager == null || !reuseManager.IsEnabled())
+        {
+            return;
+        }
+
+        var resultIds = await reuseManager.MarkWaiterStatusByMessageAsync(
+            messageId,
+            BlobRoles.Gif,
+            AttachmentProcessingWaiterStatus.Completed);
+        foreach (var resultId in resultIds)
+        {
+            var result = await reuseManager.FindByIdAsync(resultId);
+            if (result?.Status == AttachmentProcessingStatus.Ready && result.OutputStorageObjectId.HasValue)
+            {
+                await BackfillPendingWaitersAsync(reuseManager, result);
+            }
         }
     }
 

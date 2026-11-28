@@ -3,6 +3,7 @@ using IczpNet.Chat.Medias;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -13,6 +14,111 @@ namespace IczpNet.Chat;
 // FFmpeg is a Chat host concern; the main IM host no longer supplies this resolver.
 public class FFMpegCoreMediaResolver(IConfiguration configuration) : NullMediaResolver, IMediaResolver
 {
+    public override async Task<AudioInfo> GetAudioInfoAsync(byte[] bytes, string fileName)
+    {
+        if (bytes == null || bytes.Length == 0)
+        {
+            return null;
+        }
+
+        string tempAudioPath = null;
+        try
+        {
+            GlobalFFOptions.Configure(new FFOptions { BinaryFolder = configuration["Ffmpeg:BinaryFolder"] });
+            var stopwatch = Stopwatch.StartNew();
+            var suffix = Path.GetExtension(fileName);
+            if (string.IsNullOrWhiteSpace(suffix))
+            {
+                suffix = ".audio";
+            }
+
+            var relativePath = Path.Combine(Clock.Now.ToString("yyyy/MM/dd"), Path.GetRandomFileName().Replace(".", "") + suffix);
+            tempAudioPath = Path.Combine(Options.OutputTempPath, relativePath);
+            var outputPath = Path.GetDirectoryName(tempAudioPath)!;
+            Directory.CreateDirectory(outputPath);
+
+            await using (var fileStream = new FileStream(tempAudioPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await fileStream.WriteAsync(bytes);
+                await fileStream.FlushAsync();
+            }
+
+            var mediaInfo = await FFProbe.AnalyseAsync(tempAudioPath);
+            var duration = mediaInfo.Duration > TimeSpan.Zero
+                ? mediaInfo.Duration
+                : mediaInfo.PrimaryAudioStream?.Duration ?? TimeSpan.Zero;
+
+            if (duration <= TimeSpan.Zero)
+            {
+                return null;
+            }
+
+            var profile = new Dictionary<string, string>
+            {
+                ["Resolver"] = typeof(FFMpegCoreMediaResolver).FullName,
+                ["ElapsedMilliseconds"] = stopwatch.ElapsedMilliseconds.ToString(),
+            };
+
+            if (!string.IsNullOrWhiteSpace(mediaInfo.Format?.FormatName))
+            {
+                profile["FormatName"] = mediaInfo.Format.FormatName;
+            }
+
+            var audioStream = mediaInfo.PrimaryAudioStream;
+            if (audioStream != null)
+            {
+                if (!string.IsNullOrWhiteSpace(audioStream.CodecName))
+                {
+                    profile["CodecName"] = audioStream.CodecName;
+                }
+                if (audioStream.SampleRateHz > 0)
+                {
+                    profile["SampleRateHz"] = audioStream.SampleRateHz.ToString();
+                }
+                if (audioStream.Channels > 0)
+                {
+                    profile["Channels"] = audioStream.Channels.ToString();
+                }
+                if (audioStream.BitRate > 0)
+                {
+                    profile["BitRate"] = audioStream.BitRate.ToString();
+                }
+            }
+
+            return new AudioInfo
+            {
+                Duration = duration,
+                Profile = profile,
+            };
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "GetAudioInfoAsync failed for {FileName}", fileName);
+            return null;
+        }
+        finally
+        {
+            if (!string.IsNullOrWhiteSpace(tempAudioPath))
+            {
+                try
+                {
+                    if (File.Exists(tempAudioPath))
+                    {
+                        File.Delete(tempAudioPath);
+                    }
+                }
+                catch (IOException cleanupException)
+                {
+                    Logger.LogWarning(cleanupException, "Could not delete temporary audio file {Path}", tempAudioPath);
+                }
+                catch (UnauthorizedAccessException cleanupException)
+                {
+                    Logger.LogWarning(cleanupException, "Could not delete temporary audio file {Path}", tempAudioPath);
+                }
+            }
+        }
+    }
+
     public override Task<VideoInfo> GetVideoInfoAsync(byte[] bytes, string fileName)
         => GetVideoInfoAsync(bytes, fileName, new VideoProcessOptions());
 

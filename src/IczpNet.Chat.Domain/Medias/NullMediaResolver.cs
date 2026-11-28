@@ -10,7 +10,7 @@ public class NullMediaResolver : DomainService, IMediaResolver
 {
     protected MessageOptions Options => LazyServiceProvider.LazyGetRequiredService<IOptions<MessageOptions>>().Value;
 
-    public async Task<AudioInfo> GetAudioInfoAsync(byte[] bytes, string fileName)
+    public virtual async Task<AudioInfo> GetAudioInfoAsync(byte[] bytes, string fileName)
     {
         await Task.Yield();
         return null;

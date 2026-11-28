@@ -24,7 +24,19 @@ public interface IAttachmentProcessingReuseManager
 
     string ComputeRecipeHash(string recipeSpec);
 
+    string BuildImagePrimaryRecipeHash(MessageOptions.ImageOptions imageSetting);
+
+    string BuildImageThumbnailRecipeHash(MessageOptions.ImageOptions imageSetting);
+
+    string BuildVideoSnapshotRecipeHash(MessageOptions.VideoOptions videoSetting);
+
+    string BuildVideoSnapshotThumbnailRecipeHash(MessageOptions.VideoOptions videoSetting);
+
+    string BuildVideoClientSnapshotThumbnailRecipeHash(MessageOptions.VideoOptions videoSetting);
+
     string BuildVideoGifRecipeHash(MessageOptions.VideoOptions videoSetting);
+
+    string BuildSoundProbeRecipeHash();
 
     Task<AttachmentProcessingResult> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
@@ -115,6 +127,12 @@ public interface IAttachmentProcessingReuseManager
         AttachmentProcessingWaiterStatus status,
         CancellationToken cancellationToken = default);
 
+    Task<List<Guid>> MarkWaiterStatusByMessageAsync(
+        long messageId,
+        BlobRoles outputRole,
+        AttachmentProcessingWaiterStatus status,
+        CancellationToken cancellationToken = default);
+
     Task<int> InvalidateByStorageObjectIdAsync(
         Guid storageObjectId,
         CancellationToken cancellationToken = default);
@@ -152,9 +170,29 @@ public class AttachmentProcessingReuseManager(
         return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
     }
 
+    public virtual string BuildImagePrimaryRecipeHash(MessageOptions.ImageOptions imageSetting)
+        => ComputeRecipeHash($"v1|img-primary|{imageSetting.BigSize}");
+
+    public virtual string BuildImageThumbnailRecipeHash(MessageOptions.ImageOptions imageSetting)
+        => ComputeRecipeHash($"v1|img-thumb|{imageSetting.ThumbnailSize}|{BuildImagePrimaryRecipeHash(imageSetting)}");
+
+    public virtual string BuildVideoSnapshotRecipeHash(MessageOptions.VideoOptions videoSetting)
+        => ComputeRecipeHash(
+            $"v1|video-snapshot|{videoSetting.ImgCaptureSeconds}|{videoSetting.ImgSnapshotSize.Width}x{videoSetting.ImgSnapshotSize.Height}");
+
+    public virtual string BuildVideoSnapshotThumbnailRecipeHash(MessageOptions.VideoOptions videoSetting)
+        => ComputeRecipeHash(
+            $"v1|video-snap-thumb|{videoSetting.SnapshotThumbnailSize}|{BuildVideoSnapshotRecipeHash(videoSetting)}");
+
+    public virtual string BuildVideoClientSnapshotThumbnailRecipeHash(MessageOptions.VideoOptions videoSetting)
+        => ComputeRecipeHash($"v1|video-client-snap-thumb|{videoSetting.SnapshotThumbnailSize}");
+
     public virtual string BuildVideoGifRecipeHash(MessageOptions.VideoOptions videoSetting)
         => ComputeRecipeHash(
             $"v1|video-gif|{videoSetting.ImgCaptureSeconds}|{videoSetting.GifSeconds}|{videoSetting.GifSnapshotSize.Width}x{videoSetting.GifSnapshotSize.Height}");
+
+    public virtual string BuildSoundProbeRecipeHash()
+        => ComputeRecipeHash("v1|sound-probe");
 
     public virtual Task<AttachmentProcessingResult> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => resultRepository.FindAsync(id, cancellationToken: cancellationToken);
@@ -601,6 +639,41 @@ public class AttachmentProcessingReuseManager(
         await waiterRepository.UpdateAsync(waiter, autoSave: true, cancellationToken: cancellationToken);
     }
 
+    public virtual async Task<List<Guid>> MarkWaiterStatusByMessageAsync(
+        long messageId,
+        BlobRoles outputRole,
+        AttachmentProcessingWaiterStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        var waiters = await waiterRepository.GetListAsync(
+            x => x.MessageId == messageId &&
+                 x.OutputRole == outputRole &&
+                 x.Status == AttachmentProcessingWaiterStatus.Pending,
+            cancellationToken: cancellationToken);
+        if (waiters.Count == 0)
+        {
+            return [];
+        }
+
+        var now = Clock.Now;
+        var resultIds = new List<Guid>(waiters.Count);
+        foreach (var waiter in waiters)
+        {
+            waiter.Status = status;
+            if (status is AttachmentProcessingWaiterStatus.Completed or AttachmentProcessingWaiterStatus.Skipped)
+            {
+                waiter.CompletedTime = now;
+            }
+            if (!resultIds.Contains(waiter.ProcessingResultId))
+            {
+                resultIds.Add(waiter.ProcessingResultId);
+            }
+        }
+
+        await waiterRepository.UpdateManyAsync(waiters, autoSave: true, cancellationToken: cancellationToken);
+        return resultIds;
+    }
+
     public virtual async Task<int> InvalidateByStorageObjectIdAsync(
         Guid storageObjectId,
         CancellationToken cancellationToken = default)
@@ -641,19 +714,30 @@ public class AttachmentProcessingReuseManager(
         }
 
         var now = Clock.Now;
-        var waiterQuery = await waiterRepository.GetQueryableAsync();
         var resultQuery = await resultRepository.GetQueryableAsync();
+        var recoverableResultIds = resultQuery
+            .Where(r => r.OutputRole == BlobRoles.Gif &&
+                        (r.Status == AttachmentProcessingStatus.Ready ||
+                         r.Status == AttachmentProcessingStatus.Pending ||
+                         (r.Status == AttachmentProcessingStatus.Processing && r.LeaseExpireTime != null && r.LeaseExpireTime <= now) ||
+                         (r.Status == AttachmentProcessingStatus.Failed && (r.NextRetryTime == null || r.NextRetryTime <= now))))
+            .OrderBy(r => r.CreationTime)
+            .Select(r => r.Id)
+            .Take(maxResults * 2)
+            .ToList();
 
-        var candidates = (from w in waiterQuery
-                          join r in resultQuery on w.ProcessingResultId equals r.Id
-                          where w.Status == AttachmentProcessingWaiterStatus.Pending &&
-                                w.OutputRole == BlobRoles.Gif &&
-                                (r.Status == AttachmentProcessingStatus.Ready ||
-                                 r.Status == AttachmentProcessingStatus.Pending ||
-                                 (r.Status == AttachmentProcessingStatus.Processing && r.LeaseExpireTime != null && r.LeaseExpireTime <= now) ||
-                                 (r.Status == AttachmentProcessingStatus.Failed && (r.NextRetryTime == null || r.NextRetryTime <= now)))
-                          orderby w.CreationTime
-                          select new { w.ProcessingResultId, w.MessageId, w.PrimaryBlobId })
+        if (recoverableResultIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var waiterQuery = await waiterRepository.GetQueryableAsync();
+        var candidates = waiterQuery
+            .Where(w => w.Status == AttachmentProcessingWaiterStatus.Pending &&
+                        w.OutputRole == BlobRoles.Gif &&
+                        recoverableResultIds.Contains(w.ProcessingResultId))
+            .OrderBy(w => w.CreationTime)
+            .Select(w => new { w.ProcessingResultId, w.MessageId, w.PrimaryBlobId })
             .Take(maxResults * 5)
             .ToList();
 
