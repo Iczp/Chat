@@ -29,11 +29,25 @@ public class MessageAdminManager(
     private static bool IsScopeRestricted(MessageAdminScope scope)
         => scope != null && !scope.HasManageAll;
 
+    private void ValidateTenantScope(MessageAdminScope scope)
+    {
+        if (scope != null && scope.TenantId != CurrentTenant.Id)
+        {
+            throw new AbpAuthorizationException("跨租户访问消息被拒绝。");
+        }
+    }
+
     private static bool HasMessageAccess(Message message, MessageAdminScope scope)
     {
         if (!IsScopeRestricted(scope))
         {
             return true;
+        }
+
+        if (message.IsPrivate)
+        {
+            return (message.SenderId.HasValue && scope.AllowedOwnerIds.Contains(message.SenderId.Value)) ||
+                   (message.ReceiverId.HasValue && scope.AllowedOwnerIds.Contains(message.ReceiverId.Value));
         }
 
         if (message.SessionId.HasValue && scope.AllowedSessionIds.Contains(message.SessionId.Value))
@@ -69,6 +83,8 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         if (IsScopeRestricted(scope) && scope.AllowedOwnerIds.Count == 0 && scope.AllowedSessionIds.Count == 0)
         {
             return new MessageAdminListResult();
@@ -92,9 +108,12 @@ public class MessageAdminManager(
             var ownerIds = scope.AllowedOwnerIds;
             var sessionIds = scope.AllowedSessionIds;
             query = query.Where(x =>
-                (x.SessionId.HasValue && sessionIds.Contains(x.SessionId.Value)) ||
-                (x.SenderId.HasValue && ownerIds.Contains(x.SenderId.Value)) ||
-                (x.ReceiverId.HasValue && ownerIds.Contains(x.ReceiverId.Value)));
+                x.IsPrivate
+                    ? ((x.SenderId.HasValue && ownerIds.Contains(x.SenderId.Value)) ||
+                       (x.ReceiverId.HasValue && ownerIds.Contains(x.ReceiverId.Value)))
+                    : ((x.SessionId.HasValue && sessionIds.Contains(x.SessionId.Value)) ||
+                       (x.SenderId.HasValue && ownerIds.Contains(x.SenderId.Value)) ||
+                       (x.ReceiverId.HasValue && ownerIds.Contains(x.ReceiverId.Value))));
         }
 
         var totalCount = await AsyncExecuter.LongCountAsync(query, cancellationToken);
@@ -122,6 +141,8 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         var query = (await MessageRepository.GetQueryableAsync())
             .Include(x => x.Sender)
             .Include(x => x.Receiver)
@@ -147,15 +168,15 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
         if (unit == null)
         {
             throw new UserFriendlyException("会话单元不存在。");
         }
 
-        if (IsScopeRestricted(scope) &&
-            !scope.AllowedOwnerIds.Contains(unit.OwnerId) &&
-            (!unit.SessionId.HasValue || !scope.AllowedSessionIds.Contains(unit.SessionId.Value)))
+        if (IsScopeRestricted(scope) && !scope.AllowedOwnerIds.Contains(unit.OwnerId))
         {
             throw new AbpAuthorizationException("无权访问该会话历史。");
         }
@@ -193,6 +214,8 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
         if (unit == null || !unit.IsEnabled)
         {
@@ -213,6 +236,8 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         var unit = await SessionUnitManager.GetCacheAsync(sessionUnitId);
         if (unit == null || !unit.IsEnabled)
         {
@@ -232,10 +257,11 @@ public class MessageAdminManager(
         MessageAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateTenantScope(scope);
+
         var message = await MessageRepository.GetAsync(messageId, cancellationToken: cancellationToken);
         if (IsScopeRestricted(scope) &&
-            !(message.SenderId.HasValue && scope.AllowedOwnerIds.Contains(message.SenderId.Value)) &&
-            !(message.SessionId.HasValue && scope.AllowedSessionIds.Contains(message.SessionId.Value)))
+            !(message.SenderId.HasValue && scope.AllowedOwnerIds.Contains(message.SenderId.Value)))
         {
             throw new AbpAuthorizationException("无权撤回该消息。");
         }

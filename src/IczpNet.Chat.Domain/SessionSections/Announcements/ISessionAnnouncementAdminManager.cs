@@ -13,6 +13,15 @@ public class SessionAnnouncementAdminListResult
     public List<SessionAnnouncement> Items { get; set; } = new();
 }
 
+public class SessionAnnouncementAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; }
+
+    public IReadOnlyCollection<Guid> AllowedSessionIds { get; set; } = Array.Empty<Guid>();
+}
+
 public interface ISessionAnnouncementAdminManager
 {
     Task<SessionAnnouncementAdminListResult> GetAdminListAsync(
@@ -31,5 +40,6 @@ public interface ISessionAnnouncementAdminManager
     Task<SessionAnnouncement> SetPinnedAdminAsync(
         Guid id,
         bool isPinned,
+        SessionAnnouncementAdminScope scope = null,
         CancellationToken cancellationToken = default);
 }

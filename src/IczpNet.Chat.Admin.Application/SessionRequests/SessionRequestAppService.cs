@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.Permissions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionRequests;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
@@ -16,10 +17,13 @@ namespace IczpNet.Chat.Admin.SessionRequests;
 /// </summary>
 [Authorize(ChatAdminPermissions.SessionRequests.Default)]
 [ExposeServices(typeof(SessionRequestAppService), typeof(ISessionRequestAdminAppService))]
-public class SessionRequestAppService(ISessionRequestAdminManager sessionRequestAdminManager)
+public class SessionRequestAppService(
+    ISessionRequestAdminManager sessionRequestAdminManager,
+    IChatObjectManager chatObjectManager)
     : ApplicationService, ISessionRequestAdminAppService
 {
     protected ISessionRequestAdminManager SessionRequestAdminManager { get; } = sessionRequestAdminManager;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
 
     [Authorize(ChatAdminPermissions.SessionRequests.GetList)]
     public virtual async Task<PagedResultDto<SessionRequestAdminDto>> GetListAsync(
@@ -59,10 +63,20 @@ public class SessionRequestAppService(ISessionRequestAdminManager sessionRequest
         SessionRequestAdminHandleInput input,
         CancellationToken cancellationToken = default)
     {
+        var scope = new SessionRequestAdminScope
+        {
+            TenantId = CurrentTenant.Id,
+            HasManageAll = false,
+            AllowedOwnerIds = CurrentUser.Id.HasValue
+                ? await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value)
+                : Array.Empty<long>()
+        };
+
         var entity = await SessionRequestAdminManager.HandleAdminAsync(
             id,
             input.IsAgreed,
             input.HandleMessage,
+            scope,
             cancellationToken);
         return MapToDto(entity);
     }

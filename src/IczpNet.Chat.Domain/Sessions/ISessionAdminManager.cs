@@ -13,6 +13,15 @@ public class SessionAdminListResult
     public List<Session> Items { get; set; } = new();
 }
 
+public class SessionAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; }
+
+    public IReadOnlyCollection<Guid> AllowedSessionIds { get; set; } = Array.Empty<Guid>();
+}
+
 public interface ISessionAdminManager
 {
     Task<SessionAdminListResult> GetAdminListAsync(
@@ -37,5 +46,6 @@ public interface ISessionAdminManager
     Task<Session> SetIsAllMutedAdminAsync(
         Guid id,
         bool isAllMuted,
+        SessionAdminScope scope = null,
         CancellationToken cancellationToken = default);
 }

@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.Permissions;
+using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.SessionSections.Announcements;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -16,10 +18,15 @@ namespace IczpNet.Chat.Admin.SessionAnnouncements;
 /// </summary>
 [Authorize(ChatAdminPermissions.SessionAnnouncements.Default)]
 [ExposeServices(typeof(SessionAnnouncementAppService), typeof(ISessionAnnouncementAdminAppService))]
-public class SessionAnnouncementAppService(ISessionAnnouncementAdminManager announcementAdminManager)
+public class SessionAnnouncementAppService(
+    ISessionAnnouncementAdminManager announcementAdminManager,
+    IChatObjectManager chatObjectManager,
+    ISessionUnitRepository sessionUnitRepository)
     : ApplicationService, ISessionAnnouncementAdminAppService
 {
     protected ISessionAnnouncementAdminManager AnnouncementAdminManager { get; } = announcementAdminManager;
+    protected IChatObjectManager ChatObjectManager { get; } = chatObjectManager;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
 
     [Authorize(ChatAdminPermissions.SessionAnnouncements.GetList)]
     public virtual async Task<PagedResultDto<SessionAnnouncementAdminDto>> GetListAsync(
@@ -57,7 +64,29 @@ public class SessionAnnouncementAppService(ISessionAnnouncementAdminManager anno
         SessionAnnouncementAdminSetPinnedInput input,
         CancellationToken cancellationToken = default)
     {
-        var entity = await AnnouncementAdminManager.SetPinnedAdminAsync(id, input.IsPinned, cancellationToken);
+        var allowedSessionIds = Array.Empty<Guid>();
+        if (CurrentUser.Id.HasValue)
+        {
+            var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
+            if (ownerIds != null && ownerIds.Count > 0)
+            {
+                allowedSessionIds = (await AsyncExecuter.ToListAsync(
+                    (await SessionUnitRepository.GetQueryableAsync())
+                        .Where(x => ownerIds.Contains(x.OwnerId) && x.SessionId.HasValue && x.Setting.IsEnabled && !x.Setting.IsKilled)
+                        .Select(x => x.SessionId!.Value)
+                        .Distinct(),
+                    cancellationToken)).ToArray();
+            }
+        }
+
+        var scope = new SessionAnnouncementAdminScope
+        {
+            TenantId = CurrentTenant.Id,
+            HasManageAll = false,
+            AllowedSessionIds = allowedSessionIds
+        };
+
+        var entity = await AnnouncementAdminManager.SetPinnedAdminAsync(id, input.IsPinned, scope, cancellationToken);
         return MapToDto(entity);
     }
 

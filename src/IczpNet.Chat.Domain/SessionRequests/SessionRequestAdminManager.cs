@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IczpNet.Chat.Enums;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -13,11 +16,13 @@ namespace IczpNet.Chat.SessionRequests;
 
 public class SessionRequestAdminManager(
     IRepository<SessionRequest, Guid> repository,
-    ISessionRequestManager sessionRequestManager)
+    ISessionRequestManager sessionRequestManager,
+    ISessionUnitRepository sessionUnitRepository)
     : DomainService, ISessionRequestAdminManager, ITransientDependency
 {
     protected IRepository<SessionRequest, Guid> Repository { get; } = repository;
     protected ISessionRequestManager SessionRequestManager { get; } = sessionRequestManager;
+    protected ISessionUnitRepository SessionUnitRepository { get; } = sessionUnitRepository;
 
     public virtual async Task<SessionRequestAdminListResult> GetAdminListAsync(
         string keyword,
@@ -90,8 +95,14 @@ public class SessionRequestAdminManager(
         Guid id,
         bool isAgreed,
         string handleMessage,
+        SessionRequestAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        if (scope != null && scope.TenantId != CurrentTenant.Id)
+        {
+            throw new AbpAuthorizationException("跨租户审批被拒绝。");
+        }
+
         var entity = await GetAdminDetailAsync(id, cancellationToken);
         if (entity.IsHandled)
         {
@@ -102,7 +113,36 @@ public class SessionRequestAdminManager(
             throw new BusinessException("ChatAdmin:SessionRequestExpired", "该申请已过期，无法审批。");
         }
 
-        await SessionRequestManager.HandleRequestAsync(entity.Id, isAgreed, handleMessage, null);
+        Guid? handlerSessionUnitId = null;
+        if (scope != null && !scope.HasManageAll)
+        {
+            if (scope.AllowedOwnerIds.Count == 0)
+            {
+                throw new AbpAuthorizationException("无权审批该申请。");
+            }
+
+            if (entity.Destination?.ObjectType is ChatObjectTypeEnums.Room or ChatObjectTypeEnums.Square)
+            {
+                var handlerUnit = await AsyncExecuter.FirstOrDefaultAsync(
+                    (await SessionUnitRepository.GetQueryableAsync())
+                        .Where(x => scope.AllowedOwnerIds.Contains(x.OwnerId)
+                            && x.DestinationId == entity.DestinationId
+                            && x.Setting.IsEnabled
+                            && !x.Setting.IsKilled),
+                    cancellationToken);
+                if (handlerUnit == null)
+                {
+                    throw new AbpAuthorizationException("无权审批该群聊申请。");
+                }
+                handlerSessionUnitId = handlerUnit.Id;
+            }
+            else if (!entity.DestinationId.HasValue || !scope.AllowedOwnerIds.Contains(entity.DestinationId.Value))
+            {
+                throw new AbpAuthorizationException("无权审批该好友申请。");
+            }
+        }
+
+        await SessionRequestManager.HandleRequestAsync(entity.Id, isAgreed, handleMessage, handlerSessionUnitId);
         return await GetAdminDetailAsync(id, cancellationToken);
     }
 }

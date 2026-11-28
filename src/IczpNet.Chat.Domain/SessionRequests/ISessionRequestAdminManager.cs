@@ -12,6 +12,15 @@ public class SessionRequestAdminListResult
     public List<SessionRequest> Items { get; set; } = new();
 }
 
+public class SessionRequestAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; }
+
+    public IReadOnlyCollection<long> AllowedOwnerIds { get; set; } = Array.Empty<long>();
+}
+
 public interface ISessionRequestAdminManager
 {
     Task<SessionRequestAdminListResult> GetAdminListAsync(
@@ -33,5 +42,6 @@ public interface ISessionRequestAdminManager
         Guid id,
         bool isAgreed,
         string handleMessage,
+        SessionRequestAdminScope scope = null,
         CancellationToken cancellationToken = default);
 }

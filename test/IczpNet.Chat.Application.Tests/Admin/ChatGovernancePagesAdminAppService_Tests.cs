@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.Messages;
 using IczpNet.Chat.Admin.Messages.Dtos;
@@ -25,6 +26,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Security.Claims;
 using Xunit;
 
 namespace IczpNet.Chat.Admin;
@@ -189,10 +191,14 @@ public class ChatGovernancePagesAdminAppService_Tests : ChatTestBase<ChatAdminAp
         var announcements = await _announcementAppService.GetListAsync(new SessionAnnouncementAdminGetListInput { SessionId = sessionId });
         Assert.Single(announcements.Items);
 
-        var messages = await _messageAppService.GetListAsync(new MessageAdminGetListInput { SessionId = sessionId });
-        Assert.Single(messages.Items);
-        var msgDetail = await _messageAppService.GetAsync(messageId);
-        Assert.Contains("hello", msgDetail.ContentJson);
+        var principalAccessor = GetRequiredService<ICurrentPrincipalAccessor>();
+        using (principalAccessor.Change(new ClaimsPrincipal(new ClaimsIdentity([new Claim(AbpClaimTypes.UserId, Guid.NewGuid().ToString())]))))
+        {
+            var messages = await _messageAppService.GetListAsync(new MessageAdminGetListInput { SessionId = sessionId });
+            Assert.Single(messages.Items);
+            var msgDetail = await _messageAppService.GetAsync(messageId);
+            Assert.Contains("hello", msgDetail.ContentJson);
+        }
     }
 
     [Fact]

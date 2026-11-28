@@ -35,8 +35,16 @@ public class MessageAppService(
 
     protected virtual async Task<MessageAdminScope> BuildScopeAsync(CancellationToken cancellationToken = default)
     {
-        var hasManageAll = !CurrentUser.Id.HasValue
-            || await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.Messages.ManageAll);
+        if (!CurrentUser.Id.HasValue)
+        {
+            return new MessageAdminScope
+            {
+                TenantId = CurrentTenant.Id,
+                HasManageAll = false
+            };
+        }
+
+        var hasManageAll = await AuthorizationService.IsGrantedAsync(ChatAdminPermissions.Messages.ManageAll);
         if (hasManageAll)
         {
             return new MessageAdminScope
@@ -46,7 +54,7 @@ public class MessageAppService(
             };
         }
 
-        var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id!.Value);
+        var ownerIds = await ChatObjectManager.GetIdListByUserIdAsync(CurrentUser.Id.Value);
         if (ownerIds == null || ownerIds.Count == 0)
         {
             return new MessageAdminScope

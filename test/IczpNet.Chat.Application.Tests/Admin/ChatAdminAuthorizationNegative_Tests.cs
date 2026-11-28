@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using IczpNet.Chat.Admin.SessionAnnouncements;
 using IczpNet.Chat.Admin.SessionRequests;
@@ -17,12 +18,14 @@ using IczpNet.Chat.SessionRequests;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionSections.Announcements;
 using IczpNet.Chat.SessionUnits;
+using IczpNet.Chat.SessionUnitSettings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Security.Claims;
 using Xunit;
 
 namespace IczpNet.Chat.Admin;
@@ -291,6 +294,9 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
         var privateSessionId = Guid.NewGuid();
         var requestId = Guid.NewGuid();
         var announcementId = Guid.NewGuid();
+        var operatorUserId = Guid.NewGuid();
+        var outsiderUserId = Guid.NewGuid();
+        var operatorUnitId = Guid.NewGuid();
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -313,7 +319,7 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
             await InsertAsync<ChatObject>(context, new Dictionary<string, object>
             {
                 [nameof(ChatObject.Id)] = 8301L,
-                [nameof(ChatObject.Name)] = "治理操作人",
+                [nameof(ChatObject.Name)] = "治理申请人",
                 [nameof(ChatObject.Code)] = "gov_op_8301",
                 [nameof(ChatObject.ChatObjectTypeId)] = "Personal",
                 [nameof(ChatObject.ObjectType)] = ChatObjectTypeEnums.Personal,
@@ -326,6 +332,19 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
                 [nameof(ChatObject.Id)] = 8302L,
                 [nameof(ChatObject.Name)] = "目标好友",
                 [nameof(ChatObject.Code)] = "gov_target_8302",
+                [nameof(ChatObject.AppUserId)] = operatorUserId,
+                [nameof(ChatObject.ChatObjectTypeId)] = "Personal",
+                [nameof(ChatObject.ObjectType)] = ChatObjectTypeEnums.Personal,
+                [nameof(ChatObject.IsEnabled)] = true,
+                [nameof(ChatObject.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<ChatObject>(context, new Dictionary<string, object>
+            {
+                [nameof(ChatObject.Id)] = 8303L,
+                [nameof(ChatObject.Name)] = "越权操作人",
+                [nameof(ChatObject.Code)] = "gov_outsider_8303",
+                [nameof(ChatObject.AppUserId)] = outsiderUserId,
                 [nameof(ChatObject.ChatObjectTypeId)] = "Personal",
                 [nameof(ChatObject.ObjectType)] = ChatObjectTypeEnums.Personal,
                 [nameof(ChatObject.IsEnabled)] = true,
@@ -350,6 +369,22 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
                 [nameof(Session.IsEnabled)] = true,
                 [nameof(Session.IsAllMuted)] = false,
                 [nameof(Session.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<SessionUnit>(context, new Dictionary<string, object>
+            {
+                [nameof(SessionUnit.Id)] = operatorUnitId,
+                [nameof(SessionUnit.SessionId)] = sessionId,
+                [nameof(SessionUnit.OwnerId)] = 8302L,
+                [nameof(SessionUnit.DestinationId)] = 8302L,
+                [nameof(SessionUnit.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<SessionUnitSetting>(context, new Dictionary<string, object>
+            {
+                [nameof(SessionUnitSetting.SessionUnitId)] = operatorUnitId,
+                [nameof(SessionUnitSetting.IsEnabled)] = true,
+                [nameof(SessionUnitSetting.IsKilled)] = false
             });
 
             await InsertAsync<SessionRequest>(context, new Dictionary<string, object>
@@ -379,34 +414,59 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
             });
         });
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
-            _sessionAppService.SetIsAllMutedAsync(privateSessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true }));
+        var principalAccessor = GetRequiredService<ICurrentPrincipalAccessor>();
 
-        var muted = await _sessionAppService.SetIsAllMutedAsync(sessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true });
-        Assert.True(muted.IsAllMuted);
-
-        var handled = await _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput
+        // 越权用户即使拥有模块策略，也不能对未授权的目标会话/申请执行禁言、审批、置顶
+        using (principalAccessor.Change(new ClaimsPrincipal(new ClaimsIdentity([new Claim(AbpClaimTypes.UserId, outsiderUserId.ToString())]))))
         {
-            IsAgreed = true,
-            HandleMessage = "管理员审核通过"
-        });
-        Assert.True(handled.IsHandled);
-        Assert.True(handled.IsAgreed);
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _sessionAppService.SetIsAllMutedAsync(sessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true }));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput { IsAgreed = true }));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _announcementAppService.SetPinnedAsync(announcementId, new SessionAnnouncementAdminSetPinnedInput { IsPinned = true }));
+        }
 
-        await WithUnitOfWorkAsync(async () =>
+        // 授权用户可正常执行禁言、审批、置顶，且单聊不可禁言
+        using (principalAccessor.Change(new ClaimsPrincipal(new ClaimsIdentity([new Claim(AbpClaimTypes.UserId, operatorUserId.ToString())]))))
         {
-            var unitRepo = GetRequiredService<ISessionUnitRepository>();
-            var units = await unitRepo.GetListAsync(x =>
-                (x.OwnerId == 8301L && x.DestinationId == 8302L) ||
-                (x.OwnerId == 8302L && x.DestinationId == 8301L));
-            Assert.Equal(2, units.Count);
-        });
+            await WithUnitOfWorkAsync(async () =>
+            {
+                var privateScope = new SessionAdminScope
+                {
+                    HasManageAll = false,
+                    AllowedSessionIds = [privateSessionId]
+                };
+                await Assert.ThrowsAsync<BusinessException>(() =>
+                    GetRequiredService<ISessionAdminManager>().SetIsAllMutedAdminAsync(privateSessionId, true, privateScope));
+            });
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
-            _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput { IsAgreed = false }));
+            var muted = await _sessionAppService.SetIsAllMutedAsync(sessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true });
+            Assert.True(muted.IsAllMuted);
 
-        var pinned = await _announcementAppService.SetPinnedAsync(announcementId, new SessionAnnouncementAdminSetPinnedInput { IsPinned = true });
-        Assert.True(pinned.IsPinned);
+            var handled = await _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput
+            {
+                IsAgreed = true,
+                HandleMessage = "管理员审核通过"
+            });
+            Assert.True(handled.IsHandled);
+            Assert.True(handled.IsAgreed);
+
+            await WithUnitOfWorkAsync(async () =>
+            {
+                var unitRepo = GetRequiredService<ISessionUnitRepository>();
+                var units = await unitRepo.GetListAsync(x =>
+                    (x.OwnerId == 8301L && x.DestinationId == 8302L) ||
+                    (x.OwnerId == 8302L && x.DestinationId == 8301L));
+                Assert.Equal(2, units.Count);
+            });
+
+            await Assert.ThrowsAsync<BusinessException>(() =>
+                _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput { IsAgreed = false }));
+
+            var pinned = await _announcementAppService.SetPinnedAsync(announcementId, new SessionAnnouncementAdminSetPinnedInput { IsPinned = true });
+            Assert.True(pinned.IsPinned);
+        }
     }
 
     [Fact]
@@ -416,6 +476,8 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
         var sessionB = Guid.NewGuid();
         const long messageAId = 91001L;
         const long messageBId = 91002L;
+        const long privateInSessionAId = 91003L;
+        const long publicOtherSenderInSessionAId = 91004L;
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -426,11 +488,41 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
             {
                 [nameof(Message.Id)] = messageAId,
                 [nameof(Message.SessionId)] = sessionA,
+                [nameof(Message.SessionSeq)] = 1L,
                 [nameof(Message.SenderId)] = 9101L,
                 [nameof(Message.ReceiverId)] = 9102L,
                 [nameof(Message.MessageType)] = MessageTypes.Text,
-                [nameof(Message.Channel)] = Channels.PrivateChannel,
+                [nameof(Message.Channel)] = Channels.RoomChannel,
+                [nameof(Message.IsPrivate)] = false,
                 [nameof(Message.ContentJson)] = """{"text":"secret-A"}""",
+                [nameof(Message.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<Message>(context, new Dictionary<string, object>
+            {
+                [nameof(Message.Id)] = privateInSessionAId,
+                [nameof(Message.SessionId)] = sessionA,
+                [nameof(Message.SessionSeq)] = 2L,
+                [nameof(Message.SenderId)] = 9102L,
+                [nameof(Message.ReceiverId)] = 9103L,
+                [nameof(Message.MessageType)] = MessageTypes.Text,
+                [nameof(Message.Channel)] = Channels.RoomChannel,
+                [nameof(Message.IsPrivate)] = true,
+                [nameof(Message.ContentJson)] = """{"text":"private-other"}""",
+                [nameof(Message.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<Message>(context, new Dictionary<string, object>
+            {
+                [nameof(Message.Id)] = publicOtherSenderInSessionAId,
+                [nameof(Message.SessionId)] = sessionA,
+                [nameof(Message.SessionSeq)] = 3L,
+                [nameof(Message.SenderId)] = 9102L,
+                [nameof(Message.ReceiverId)] = 9101L,
+                [nameof(Message.MessageType)] = MessageTypes.Text,
+                [nameof(Message.Channel)] = Channels.RoomChannel,
+                [nameof(Message.IsPrivate)] = false,
+                [nameof(Message.ContentJson)] = """{"text":"public-other"}""",
                 [nameof(Message.CreationTime)] = DateTime.UtcNow
             });
 
@@ -442,6 +534,7 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
                 [nameof(Message.ReceiverId)] = 9202L,
                 [nameof(Message.MessageType)] = MessageTypes.Text,
                 [nameof(Message.Channel)] = Channels.PrivateChannel,
+                [nameof(Message.IsPrivate)] = false,
                 [nameof(Message.ContentJson)] = """{"text":"secret-B"}""",
                 [nameof(Message.CreationTime)] = DateTime.UtcNow
             });
@@ -454,21 +547,37 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
             AllowedSessionIds = [sessionA]
         };
 
+        var crossTenantScope = new MessageAdminScope
+        {
+            TenantId = Guid.NewGuid(),
+            HasManageAll = true
+        };
+
         await WithUnitOfWorkAsync(async () =>
         {
             var list = await _messageAdminManager.GetAdminListAsync(
                 null, null, null, null, null, null, null, null, null, 0, 20, scopeA);
-            Assert.Single(list.Items);
-            Assert.Equal(messageAId, list.Items[0].Id);
+            Assert.Equal(2, list.Items.Count);
+            Assert.DoesNotContain(list.Items, x => x.Id == privateInSessionAId || x.Id == messageBId);
 
             var detailA = await _messageAdminManager.GetAdminDetailAsync(messageAId, scopeA);
             Assert.Equal(messageAId, detailA.Id);
 
+            // 同群但非私密消息参与者的成员，不得查看私密消息详情，也不得撤回他人消息
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.GetAdminDetailAsync(privateInSessionAId, scopeA));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.RollbackAdminAsync(privateInSessionAId, scopeA));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.RollbackAdminAsync(publicOtherSenderInSessionAId, scopeA));
+
+            // 跨会话与跨租户均应拒绝
             await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
                 _messageAdminManager.GetAdminDetailAsync(messageBId, scopeA));
-
             await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
                 _messageAdminManager.RollbackAdminAsync(messageBId, scopeA));
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.GetAdminDetailAsync(messageAId, crossTenantScope));
         });
     }
 

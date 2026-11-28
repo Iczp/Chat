@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Entities;
@@ -86,9 +87,21 @@ public class SessionAnnouncementAdminManager(
     public virtual async Task<SessionAnnouncement> SetPinnedAdminAsync(
         Guid id,
         bool isPinned,
+        SessionAnnouncementAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        if (scope != null && scope.TenantId != CurrentTenant.Id)
+        {
+            throw new AbpAuthorizationException("跨租户操作公告被拒绝。");
+        }
+
         var entity = await GetAdminDetailAsync(id, cancellationToken);
+        if (scope != null && !scope.HasManageAll &&
+            (!entity.SessionId.HasValue || !scope.AllowedSessionIds.Contains(entity.SessionId.Value)))
+        {
+            throw new AbpAuthorizationException("无权置顶该会话的公告。");
+        }
+
         if (entity.SessionId.HasValue)
         {
             await using var handle = await DistributedLock.TryAcquireAsync(

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
@@ -94,9 +95,20 @@ public class SessionAdminManager(ISessionRepository sessionRepository)
     public virtual async Task<Session> SetIsAllMutedAdminAsync(
         Guid id,
         bool isAllMuted,
+        SessionAdminScope scope = null,
         CancellationToken cancellationToken = default)
     {
+        if (scope != null && scope.TenantId != CurrentTenant.Id)
+        {
+            throw new AbpAuthorizationException("跨租户操作会话被拒绝。");
+        }
+
         var entity = await GetAdminDetailAsync(id, cancellationToken);
+        if (scope != null && !scope.HasManageAll && !scope.AllowedSessionIds.Contains(entity.Id))
+        {
+            throw new AbpAuthorizationException("无权操作该会话的全员禁言。");
+        }
+
         if (entity.Channel != Channels.RoomChannel)
         {
             throw new BusinessException("ChatAdmin:OnlyRoomSessionCanMute", "仅群聊会话支持全员禁言。");
