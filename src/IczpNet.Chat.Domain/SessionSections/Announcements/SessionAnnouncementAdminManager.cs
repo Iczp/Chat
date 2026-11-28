@@ -4,16 +4,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionSections.Announcements;
 
-public class SessionAnnouncementAdminManager(ISessionAnnouncementRepository repository)
+public class SessionAnnouncementAdminManager(
+    ISessionAnnouncementRepository repository,
+    IAbpDistributedLock distributedLock)
     : DomainService, ISessionAnnouncementAdminManager, ITransientDependency
 {
     protected ISessionAnnouncementRepository Repository { get; } = repository;
+    protected IAbpDistributedLock DistributedLock { get; } = distributedLock;
 
     public virtual async Task<SessionAnnouncementAdminListResult> GetAdminListAsync(
         Guid? sessionId,
@@ -84,6 +89,22 @@ public class SessionAnnouncementAdminManager(ISessionAnnouncementRepository repo
         CancellationToken cancellationToken = default)
     {
         var entity = await GetAdminDetailAsync(id, cancellationToken);
+        if (entity.SessionId.HasValue)
+        {
+            await using var handle = await DistributedLock.TryAcquireAsync(
+                $"Chat:Announcement:Session:{entity.SessionId.Value:N}",
+                TimeSpan.FromSeconds(10),
+                cancellationToken);
+            if (handle == null)
+            {
+                throw new UserFriendlyException("公告正在更新，请重试。");
+            }
+
+            entity.SetPinned(isPinned, Clock.Now);
+            await Repository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
+            return entity;
+        }
+
         entity.SetPinned(isPinned, Clock.Now);
         await Repository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
         return entity;

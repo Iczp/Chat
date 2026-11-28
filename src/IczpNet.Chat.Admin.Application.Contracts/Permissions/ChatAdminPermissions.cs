@@ -178,6 +178,7 @@ public static class ChatAdminPermissions
         public const string GetContent = Default + ".GetContent";
         public const string Send = Default + ".Send";
         public const string Rollback = Default + ".Rollback";
+        public const string ManageAll = Default + ".ManageAll";
     }
 
     public static class Overview
@@ -191,6 +192,7 @@ public static class ChatAdminPermissions
         public const string GetList = Default + ".GetList";
         public const string GetDetail = Default + ".GetDetail";
         public const string SetIsEnabled = Default + ".SetIsEnabled";
+        public const string SetIsAllMuted = Default + ".SetIsAllMuted";
     }
 
     public static class SessionRequests
@@ -214,5 +216,6 @@ public static class ChatAdminPermissions
         public const string GetList = Default + ".GetList";
         public const string GetDetail = Default + ".GetDetail";
         public const string Update = Default + ".Update";
+        public const string Pin = Default + ".Pin";
     }
 }

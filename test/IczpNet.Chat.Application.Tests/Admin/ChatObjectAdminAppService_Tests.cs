@@ -55,12 +55,22 @@ public class ChatAdminApplicationTestModule : AbpModule
         }
 
         context.Services.AddTransient<IArticleScheduleAuthorization>(_ => new TestArticleScheduleAuthorization());
+        context.Services.AddTransient<Volo.Abp.BackgroundJobs.IBackgroundJobManager>(_ => new TestBackgroundJobManager());
     }
 
     private sealed class TestArticleScheduleAuthorization : IArticleScheduleAuthorization
     {
         public Task<ClaimsPrincipal> AuthorizeAsync(Guid userId, long ownerId) =>
             Task.FromResult(new ClaimsPrincipal());
+    }
+
+    private sealed class TestBackgroundJobManager : Volo.Abp.BackgroundJobs.IBackgroundJobManager
+    {
+        public Task<string> EnqueueAsync<TArgs>(
+            TArgs args,
+            Volo.Abp.BackgroundJobs.BackgroundJobPriority priority = Volo.Abp.BackgroundJobs.BackgroundJobPriority.Normal,
+            TimeSpan? delay = null) =>
+            Task.FromResult(Guid.NewGuid().ToString());
     }
 }
 

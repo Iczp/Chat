@@ -25,6 +25,17 @@ public class MessageAdminHistoryResult
     public long? NextCursorId { get; set; }
 }
 
+public class MessageAdminScope
+{
+    public Guid? TenantId { get; set; }
+
+    public bool HasManageAll { get; set; }
+
+    public IReadOnlyCollection<long> AllowedOwnerIds { get; set; } = Array.Empty<long>();
+
+    public IReadOnlyCollection<Guid> AllowedSessionIds { get; set; } = Array.Empty<Guid>();
+}
+
 public interface IMessageAdminManager
 {
     Task<MessageAdminListResult> GetAdminListAsync(
@@ -39,29 +50,35 @@ public interface IMessageAdminManager
         DateTime? endTime,
         int skipCount,
         int maxResultCount,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 
     Task<Message> GetAdminDetailAsync(
         long id,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageAdminHistoryResult> GetHistoryAdminAsync(
         Guid sessionUnitId,
         long? maxMessageId,
         int maxResultCount,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageInfo<ArticleContentInfo>> SendArticleContentMessageAdminAsync(
         Guid sessionUnitId,
         MessageInput<ArticleContentInput> input,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 
     Task<MessageInfo<TemplateContentInfo>> SendTemplateContentMessageAdminAsync(
         Guid sessionUnitId,
         MessageInput<TemplateContentInput> input,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 
     Task<Dictionary<string, long>> RollbackAdminAsync(
         long messageId,
+        MessageAdminScope scope = null,
         CancellationToken cancellationToken = default);
 }

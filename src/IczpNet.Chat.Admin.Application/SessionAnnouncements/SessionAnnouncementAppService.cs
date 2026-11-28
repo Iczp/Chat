@@ -51,7 +51,7 @@ public class SessionAnnouncementAppService(ISessionAnnouncementAdminManager anno
         return MapToDto(entity);
     }
 
-    [Authorize(ChatAdminPermissions.SessionAnnouncements.Update)]
+    [Authorize(ChatAdminPermissions.SessionAnnouncements.Pin)]
     public virtual async Task<SessionAnnouncementAdminDto> SetPinnedAsync(
         Guid id,
         SessionAnnouncementAdminSetPinnedInput input,

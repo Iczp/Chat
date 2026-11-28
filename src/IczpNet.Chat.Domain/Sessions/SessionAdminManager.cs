@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IczpNet.Chat.Enums;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
@@ -96,6 +97,11 @@ public class SessionAdminManager(ISessionRepository sessionRepository)
         CancellationToken cancellationToken = default)
     {
         var entity = await GetAdminDetailAsync(id, cancellationToken);
+        if (entity.Channel != Channels.RoomChannel)
+        {
+            throw new BusinessException("ChatAdmin:OnlyRoomSessionCanMute", "仅群聊会话支持全员禁言。");
+        }
+
         entity.SetRoomPolicies(isAllMuted: isAllMuted);
         await SessionRepository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
         return entity;

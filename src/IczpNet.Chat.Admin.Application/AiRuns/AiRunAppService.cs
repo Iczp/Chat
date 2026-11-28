@@ -7,6 +7,7 @@ using IczpNet.Chat.Admin.AiRuns.Dtos;
 using IczpNet.Chat.Admin.Permissions;
 using IczpNet.Chat.AiRuns;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
@@ -111,7 +112,7 @@ public class AiRunAppService(IAiRunManager aiRunManager)
     }
 
     [Authorize(ChatAdminPermissions.AiRuns.Delete)]
-    public virtual Task DeleteManyAsync(List<Guid> idList, CancellationToken cancellationToken = default)
+    public virtual Task DeleteManyAsync([FromQuery] List<Guid> idList, CancellationToken cancellationToken = default)
     {
         return AiRunManager.DeleteManyAdminAsync(idList, cancellationToken);
     }

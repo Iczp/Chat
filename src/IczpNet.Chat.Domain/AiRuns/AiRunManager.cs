@@ -293,7 +293,7 @@ public class AiRunManager(
     {
         if (idList == null || idList.Count == 0)
         {
-            return;
+            throw new BusinessException("ChatAdmin:AiRunBatchEmpty", "请至少选择一条要删除的 AI 任务记录。");
         }
 
         var distinctIds = idList.Distinct().ToList();

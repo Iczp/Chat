@@ -11,10 +11,13 @@ using Volo.Abp.Domain.Services;
 
 namespace IczpNet.Chat.SessionRequests;
 
-public class SessionRequestAdminManager(IRepository<SessionRequest, Guid> repository)
+public class SessionRequestAdminManager(
+    IRepository<SessionRequest, Guid> repository,
+    ISessionRequestManager sessionRequestManager)
     : DomainService, ISessionRequestAdminManager, ITransientDependency
 {
     protected IRepository<SessionRequest, Guid> Repository { get; } = repository;
+    protected ISessionRequestManager SessionRequestManager { get; } = sessionRequestManager;
 
     public virtual async Task<SessionRequestAdminListResult> GetAdminListAsync(
         string keyword,
@@ -99,16 +102,7 @@ public class SessionRequestAdminManager(IRepository<SessionRequest, Guid> reposi
             throw new BusinessException("ChatAdmin:SessionRequestExpired", "该申请已过期，无法审批。");
         }
 
-        if (isAgreed)
-        {
-            entity.AgreeRequest(handleMessage, null);
-        }
-        else
-        {
-            entity.DisagreeRequest(handleMessage, null);
-        }
-
-        await Repository.UpdateAsync(entity, autoSave: true, cancellationToken: cancellationToken);
-        return entity;
+        await SessionRequestManager.HandleRequestAsync(entity.Id, isAgreed, handleMessage, null);
+        return await GetAdminDetailAsync(id, cancellationToken);
     }
 }

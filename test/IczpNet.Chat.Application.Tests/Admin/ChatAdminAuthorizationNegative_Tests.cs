@@ -5,15 +5,18 @@ using System.Threading.Tasks;
 using IczpNet.Chat.Admin.SessionAnnouncements;
 using IczpNet.Chat.Admin.SessionRequests;
 using IczpNet.Chat.Admin.Sessions;
+using IczpNet.Chat.AiRuns;
 using IczpNet.Chat.ChatObjects;
 using IczpNet.Chat.ChatObjectTypes;
 using IczpNet.Chat.EntityFrameworkCore;
 using IczpNet.Chat.Enums;
 using IczpNet.Chat.MessageSections;
+using IczpNet.Chat.MessageSections.Messages;
 using IczpNet.Chat.MessageTemplates;
 using IczpNet.Chat.SessionRequests;
 using IczpNet.Chat.Sessions;
 using IczpNet.Chat.SessionSections.Announcements;
+using IczpNet.Chat.SessionUnits;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Volo.Abp;
@@ -32,6 +35,8 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
     private readonly IMessageTemplateAdminManager _templateAdminManager;
     private readonly IArticleScheduleAdminManager _scheduleAdminManager;
     private readonly IChatObjectManager _chatObjectManager;
+    private readonly IMessageAdminManager _messageAdminManager;
+    private readonly IAiRunManager _aiRunManager;
     private readonly ISessionAdminAppService _sessionAppService;
     private readonly ISessionRequestAdminAppService _sessionRequestAppService;
     private readonly ISessionAnnouncementAdminAppService _announcementAppService;
@@ -41,6 +46,8 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
         _templateAdminManager = GetRequiredService<IMessageTemplateAdminManager>();
         _scheduleAdminManager = GetRequiredService<IArticleScheduleAdminManager>();
         _chatObjectManager = GetRequiredService<IChatObjectManager>();
+        _messageAdminManager = GetRequiredService<IMessageAdminManager>();
+        _aiRunManager = GetRequiredService<IAiRunManager>();
         _sessionAppService = GetRequiredService<ISessionAdminAppService>();
         _sessionRequestAppService = GetRequiredService<ISessionRequestAdminAppService>();
         _announcementAppService = GetRequiredService<ISessionAnnouncementAdminAppService>();
@@ -281,11 +288,25 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
     public async Task Session_request_and_announcement_write_actions_work()
     {
         var sessionId = Guid.NewGuid();
+        var privateSessionId = Guid.NewGuid();
         var requestId = Guid.NewGuid();
         var announcementId = Guid.NewGuid();
 
         await WithUnitOfWorkAsync(async () =>
         {
+            var typeRepo = GetRequiredService<IRepository<ChatObjectType, string>>();
+            foreach (var (id, objType) in new[]
+            {
+                ("Personal", ChatObjectTypeEnums.Personal),
+                ("Room", ChatObjectTypeEnums.Room)
+            })
+            {
+                if (await typeRepo.FindAsync(id) == null)
+                {
+                    await typeRepo.InsertAsync(new ChatObjectType(id) { Name = id, ObjectType = objType }, autoSave: true);
+                }
+            }
+
             var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
             await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
 
@@ -294,6 +315,17 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
                 [nameof(ChatObject.Id)] = 8301L,
                 [nameof(ChatObject.Name)] = "治理操作人",
                 [nameof(ChatObject.Code)] = "gov_op_8301",
+                [nameof(ChatObject.ChatObjectTypeId)] = "Personal",
+                [nameof(ChatObject.ObjectType)] = ChatObjectTypeEnums.Personal,
+                [nameof(ChatObject.IsEnabled)] = true,
+                [nameof(ChatObject.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<ChatObject>(context, new Dictionary<string, object>
+            {
+                [nameof(ChatObject.Id)] = 8302L,
+                [nameof(ChatObject.Name)] = "目标好友",
+                [nameof(ChatObject.Code)] = "gov_target_8302",
                 [nameof(ChatObject.ChatObjectTypeId)] = "Personal",
                 [nameof(ChatObject.ObjectType)] = ChatObjectTypeEnums.Personal,
                 [nameof(ChatObject.IsEnabled)] = true,
@@ -310,12 +342,22 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
                 [nameof(Session.CreationTime)] = DateTime.UtcNow
             });
 
+            await InsertAsync<Session>(context, new Dictionary<string, object>
+            {
+                [nameof(Session.Id)] = privateSessionId,
+                [nameof(Session.Title)] = "单聊会话",
+                [nameof(Session.Channel)] = Channels.PrivateChannel,
+                [nameof(Session.IsEnabled)] = true,
+                [nameof(Session.IsAllMuted)] = false,
+                [nameof(Session.CreationTime)] = DateTime.UtcNow
+            });
+
             await InsertAsync<SessionRequest>(context, new Dictionary<string, object>
             {
                 [nameof(SessionRequest.Id)] = requestId,
                 [nameof(SessionRequest.OwnerId)] = 8301L,
                 [nameof(SessionRequest.DestinationId)] = 8302L,
-                [nameof(SessionRequest.RequestMessage)] = "申请入群",
+                [nameof(SessionRequest.RequestMessage)] = "申请加为好友",
                 [nameof(SessionRequest.IsHandled)] = false,
                 [nameof(SessionRequest.IsEnabled)] = true,
                 [nameof(SessionRequest.CreationTime)] = DateTime.UtcNow
@@ -337,6 +379,9 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
             });
         });
 
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            _sessionAppService.SetIsAllMutedAsync(privateSessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true }));
+
         var muted = await _sessionAppService.SetIsAllMutedAsync(sessionId, new SessionAdminSetIsAllMutedInput { IsAllMuted = true });
         Assert.True(muted.IsAllMuted);
 
@@ -348,10 +393,115 @@ public class ChatAdminAuthorizationNegative_Tests : ChatTestBase<ChatAdminApplic
         Assert.True(handled.IsHandled);
         Assert.True(handled.IsAgreed);
 
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var unitRepo = GetRequiredService<ISessionUnitRepository>();
+            var units = await unitRepo.GetListAsync(x =>
+                (x.OwnerId == 8301L && x.DestinationId == 8302L) ||
+                (x.OwnerId == 8302L && x.DestinationId == 8301L));
+            Assert.Equal(2, units.Count);
+        });
+
         await Assert.ThrowsAsync<BusinessException>(() =>
             _sessionRequestAppService.HandleAsync(requestId, new SessionRequestAdminHandleInput { IsAgreed = false }));
 
         var pinned = await _announcementAppService.SetPinnedAsync(announcementId, new SessionAnnouncementAdminSetPinnedInput { IsPinned = true });
         Assert.True(pinned.IsPinned);
+    }
+
+    [Fact]
+    public async Task Message_scope_enforces_session_and_owner_isolation()
+    {
+        var sessionA = Guid.NewGuid();
+        var sessionB = Guid.NewGuid();
+        const long messageAId = 91001L;
+        const long messageBId = 91002L;
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var context = await GetRequiredService<IDbContextProvider<ChatDbContext>>().GetDbContextAsync();
+            await context.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys=OFF");
+
+            await InsertAsync<Message>(context, new Dictionary<string, object>
+            {
+                [nameof(Message.Id)] = messageAId,
+                [nameof(Message.SessionId)] = sessionA,
+                [nameof(Message.SenderId)] = 9101L,
+                [nameof(Message.ReceiverId)] = 9102L,
+                [nameof(Message.MessageType)] = MessageTypes.Text,
+                [nameof(Message.Channel)] = Channels.PrivateChannel,
+                [nameof(Message.ContentJson)] = """{"text":"secret-A"}""",
+                [nameof(Message.CreationTime)] = DateTime.UtcNow
+            });
+
+            await InsertAsync<Message>(context, new Dictionary<string, object>
+            {
+                [nameof(Message.Id)] = messageBId,
+                [nameof(Message.SessionId)] = sessionB,
+                [nameof(Message.SenderId)] = 9201L,
+                [nameof(Message.ReceiverId)] = 9202L,
+                [nameof(Message.MessageType)] = MessageTypes.Text,
+                [nameof(Message.Channel)] = Channels.PrivateChannel,
+                [nameof(Message.ContentJson)] = """{"text":"secret-B"}""",
+                [nameof(Message.CreationTime)] = DateTime.UtcNow
+            });
+        });
+
+        var scopeA = new MessageAdminScope
+        {
+            HasManageAll = false,
+            AllowedOwnerIds = [9101L],
+            AllowedSessionIds = [sessionA]
+        };
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var list = await _messageAdminManager.GetAdminListAsync(
+                null, null, null, null, null, null, null, null, null, 0, 20, scopeA);
+            Assert.Single(list.Items);
+            Assert.Equal(messageAId, list.Items[0].Id);
+
+            var detailA = await _messageAdminManager.GetAdminDetailAsync(messageAId, scopeA);
+            Assert.Equal(messageAId, detailA.Id);
+
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.GetAdminDetailAsync(messageBId, scopeA));
+
+            await Assert.ThrowsAsync<AbpAuthorizationException>(() =>
+                _messageAdminManager.RollbackAdminAsync(messageBId, scopeA));
+        });
+    }
+
+    [Fact]
+    public async Task AiRun_batch_delete_validates_empty_limit_and_running_state()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var emptyEx = await Assert.ThrowsAsync<BusinessException>(() =>
+                _aiRunManager.DeleteManyAdminAsync(new List<Guid>()));
+            Assert.Equal("ChatAdmin:AiRunBatchEmpty", emptyEx.Code);
+
+            var tooMany = Enumerable.Range(0, 101).Select(_ => Guid.NewGuid()).ToList();
+            var limitEx = await Assert.ThrowsAsync<BusinessException>(() =>
+                _aiRunManager.DeleteManyAdminAsync(tooMany));
+            Assert.Equal("ChatAdmin:AiRunBatchLimitExceeded", limitEx.Code);
+
+            var aiRunRepo = GetRequiredService<IRepository<AiRun, Guid>>();
+            var sessionId = Guid.NewGuid();
+            var unitId = Guid.NewGuid();
+            var run1 = await _aiRunManager.CreateAsync(93001L, sessionId, unitId, "openai");
+            var run2 = await _aiRunManager.CreateAsync(93002L, sessionId, unitId, "openai");
+            var running = await _aiRunManager.CreateAsync(93003L, sessionId, unitId, "openai");
+            running.Claim("worker-1", DateTime.UtcNow, DateTime.UtcNow.AddMinutes(5), DateTime.UtcNow.AddMinutes(10));
+            await aiRunRepo.UpdateAsync(running, autoSave: true);
+
+            var runningEx = await Assert.ThrowsAsync<BusinessException>(() =>
+                _aiRunManager.DeleteManyAdminAsync(new List<Guid> { run1.Id, running.Id }));
+            Assert.Equal("ChatAdmin:CannotDeleteRunningAiRun", runningEx.Code);
+
+            await _aiRunManager.DeleteManyAdminAsync(new List<Guid> { run1.Id, run2.Id });
+            Assert.Null(await aiRunRepo.FindAsync(run1.Id));
+            Assert.Null(await aiRunRepo.FindAsync(run2.Id));
+        });
     }
 }

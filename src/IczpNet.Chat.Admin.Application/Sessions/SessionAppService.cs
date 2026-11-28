@@ -62,7 +62,7 @@ public class SessionAppService(ISessionAdminManager sessionAdminManager)
         return MapToDto(entity);
     }
 
-    [Authorize(ChatAdminPermissions.Sessions.SetIsEnabled)]
+    [Authorize(ChatAdminPermissions.Sessions.SetIsAllMuted)]
     public virtual async Task<SessionAdminDto> SetIsAllMutedAsync(
         Guid id,
         SessionAdminSetIsAllMutedInput input,

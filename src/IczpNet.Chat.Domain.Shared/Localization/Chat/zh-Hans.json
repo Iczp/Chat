@@ -247,11 +247,13 @@
     "Permission:ChatAdmin.Messages.GetContent": "查看消息正文",
     "Permission:ChatAdmin.Messages.Send": "发送管理消息",
     "Permission:ChatAdmin.Messages.Rollback": "撤回消息",
+    "Permission:ChatAdmin.Messages.ManageAll": "管理所有消息",
     "Permission:ChatAdmin.Overview": "运营总览",
     "Permission:ChatAdmin.Sessions": "会话档案",
     "Permission:ChatAdmin.Sessions.GetList": "查看列表",
     "Permission:ChatAdmin.Sessions.GetDetail": "查看详情",
     "Permission:ChatAdmin.Sessions.SetIsEnabled": "启停会话",
+    "Permission:ChatAdmin.Sessions.SetIsAllMuted": "全员禁言",
     "Permission:ChatAdmin.SessionRequests": "入群与好友申请",
     "Permission:ChatAdmin.SessionRequests.GetList": "查看列表",
     "Permission:ChatAdmin.SessionRequests.GetDetail": "查看详情",
@@ -262,7 +264,8 @@
     "Permission:ChatAdmin.SessionAnnouncements": "群公告管理",
     "Permission:ChatAdmin.SessionAnnouncements.GetList": "查看列表",
     "Permission:ChatAdmin.SessionAnnouncements.GetDetail": "查看详情",
-    "Permission:ChatAdmin.SessionAnnouncements.Update": "编辑/置顶公告",
+    "Permission:ChatAdmin.SessionAnnouncements.Update": "编辑公告",
+    "Permission:ChatAdmin.SessionAnnouncements.Pin": "置顶管理",
 
     "code-generator-localization": "Do not modify or delete this line of comments"
   }

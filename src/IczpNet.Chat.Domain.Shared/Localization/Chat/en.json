@@ -107,11 +107,13 @@
     "Permission:ChatAdmin.Messages.GetContent": "View message content",
     "Permission:ChatAdmin.Messages.Send": "Send message",
     "Permission:ChatAdmin.Messages.Rollback": "Rollback message",
+    "Permission:ChatAdmin.Messages.ManageAll": "Manage all messages",
     "Permission:ChatAdmin.Overview": "Operations Overview",
     "Permission:ChatAdmin.Sessions": "Sessions",
     "Permission:ChatAdmin.Sessions.GetList": "View list",
     "Permission:ChatAdmin.Sessions.GetDetail": "View detail",
     "Permission:ChatAdmin.Sessions.SetIsEnabled": "Set enabled state",
+    "Permission:ChatAdmin.Sessions.SetIsAllMuted": "Set All Muted",
     "Permission:ChatAdmin.SessionRequests": "Session Requests",
     "Permission:ChatAdmin.SessionRequests.GetList": "View list",
     "Permission:ChatAdmin.SessionRequests.GetDetail": "View detail",
@@ -122,7 +124,8 @@
     "Permission:ChatAdmin.SessionAnnouncements": "Session Announcements",
     "Permission:ChatAdmin.SessionAnnouncements.GetList": "View list",
     "Permission:ChatAdmin.SessionAnnouncements.GetDetail": "View detail",
-    "Permission:ChatAdmin.SessionAnnouncements.Update": "Update/Pin announcement",
+    "Permission:ChatAdmin.SessionAnnouncements.Update": "Update announcement",
+    "Permission:ChatAdmin.SessionAnnouncements.Pin": "Pin",
 
     "code-generator-localization": "Do not modify or delete this line of comments"
   }

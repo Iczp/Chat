@@ -127,6 +127,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         messagesPermission.AddChild(ChatAdminPermissions.Messages.GetContent, L("Permission:ChatAdmin.Messages.GetContent"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.Send, L("Permission:ChatAdmin.Messages.Send"));
         messagesPermission.AddChild(ChatAdminPermissions.Messages.Rollback, L("Permission:ChatAdmin.Messages.Rollback"));
+        messagesPermission.AddChild(ChatAdminPermissions.Messages.ManageAll, L("Permission:ChatAdmin.Messages.ManageAll"));
 
         adminGroup.AddPermission(ChatAdminPermissions.Overview.Default, L("Permission:ChatAdmin.Overview"));
 
@@ -134,6 +135,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         sessionsPermission.AddChild(ChatAdminPermissions.Sessions.GetList, L("Permission:ChatAdmin.Sessions.GetList"));
         sessionsPermission.AddChild(ChatAdminPermissions.Sessions.GetDetail, L("Permission:ChatAdmin.Sessions.GetDetail"));
         sessionsPermission.AddChild(ChatAdminPermissions.Sessions.SetIsEnabled, L("Permission:ChatAdmin.Sessions.SetIsEnabled"));
+        sessionsPermission.AddChild(ChatAdminPermissions.Sessions.SetIsAllMuted, L("Permission:ChatAdmin.Sessions.SetIsAllMuted"));
 
         var sessionRequestsPermission = adminGroup.AddPermission(ChatAdminPermissions.SessionRequests.Default, L("Permission:ChatAdmin.SessionRequests"));
         sessionRequestsPermission.AddChild(ChatAdminPermissions.SessionRequests.GetList, L("Permission:ChatAdmin.SessionRequests.GetList"));
@@ -148,6 +150,7 @@ public class ChatAdminPermissionDefinitionProvider : PermissionDefinitionProvide
         sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.GetList, L("Permission:ChatAdmin.SessionAnnouncements.GetList"));
         sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.GetDetail, L("Permission:ChatAdmin.SessionAnnouncements.GetDetail"));
         sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.Update, L("Permission:ChatAdmin.SessionAnnouncements.Update"));
+        sessionAnnouncementsPermission.AddChild(ChatAdminPermissions.SessionAnnouncements.Pin, L("Permission:ChatAdmin.SessionAnnouncements.Pin"));
     }
 
     private static LocalizableString L(string name)
