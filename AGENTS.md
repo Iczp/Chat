@@ -2007,9 +2007,10 @@ redis.call('HSET', key, 'FieldB', valueB)
 
 本节适用于 IczpNet.Chat 的全部管理业务接口，优先于第 8 节和第 82 节的通用规定。按 [管理功能开发文档](docs/codex/CHAT-ADMIN-DEVELOPMENT.md) 先完成后端并验收实际 API 契约，再开发和切换 Vben。
 
-- 所有 Chat 管理 API 的 ApplicationService 和管理接口契约统一放在 `IczpNet.Chat.Admin.Application`。该层只负责 ABP 权限、请求参数校验、DTO 映射、Unit of Work 边界与调用 Domain。禁止引用或调用旧 Application 实现、通过 HTTP 转调旧接口，或继承旧 AppService 来暴露管理 API。
+- `IczpNet.Chat.Admin.Application.Contracts` 是必建项目，统一放管理 AppService 接口、输入输出 DTO、ABP 权限定义及本地化接入。该项目按需引用 `IczpNet.Chat.Domain.Shared`。所有管理 API 的 AppService 实现在 `IczpNet.Chat.Admin.Application`，通过项目引用及 ABP `[DependsOn]` 使用管理 Contracts。实现层只负责权限、请求参数校验、DTO 映射、Unit of Work 边界与调用 Domain。禁止引用或调用旧 Application 实现、通过 HTTP 转调旧接口，或继承旧 AppService 来暴露管理 API。
 - 所有 Chat 管理业务方法都在 `IczpNet.Chat.Domain`，包括业务查询、资源范围判断、状态转换、幂等和副作用协调。优先复用现有 Manager 和领域服务。旧 Application、Controller 或遗留管理服务内的业务逻辑在迁移时先提炼到 Domain，再由所需入口直接调用。数据库投影和索引查询由 EntityFrameworkCore 实现，管理 AppService 通过 Domain 访问这些能力。
 - `ChatHttpApiHostModule` 必须对 `ChatAdminApplicationModule` 程序集注册 ABP `ConventionalControllers`，使用 `RootPath = "chat/admin"` 和 `RemoteServiceName = "ChatAdmin"`。所有管理 API 统一生成至 `/api/chat/admin/...`。禁止为管理用例编写手写 Controller、Minimal API、Host 转发或旧路由别名。
+- 管理 API 的 Swagger 分组、文档过滤器或其他 HTTP 配置需要独立复用时，可增加 `IczpNet.Chat.Admin.HttpApi`。由 ApiHost 组合该可选模块并负责自动路由配置。管理 AppService 仍由 Admin.Application 实现，HTTP 项目只承载可复用的传输层配置。
 - 所有对外管理操作必须有显式 ABP Permission。区分资源读取、写入和高影响操作，由 Domain 校验租户与目标范围。权限授予、数据范围、写操作审计和敏感字段裁剪要在前端接入前完成真实 HTTP 验证。不能用前端菜单权限替代后端校验。
 - 旧 `/api/chat/...` 接口只作为迁移盘点依据。Vben 的列表、详情、选择器、状态操作、批量操作和其他 Chat 管理请求必须走 `/api/chat/admin/...`。禁止直接调用、代理转发或失败时回退到旧接口。验收核对 Swagger、ABP API 定义、控制器程序集来源及 Vben 实际网络请求。其他模块的通用认证、权限与设施接口遵守其所属模块契约。
 

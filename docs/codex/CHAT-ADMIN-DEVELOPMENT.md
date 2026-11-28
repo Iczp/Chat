@@ -1,6 +1,6 @@
 # Chat 管理功能开发文档
 
-本项目统一交付 Chat 管理 API、业务治理能力和 Vben「即时通讯管理」。**第一阶段开发 `IczpNet.Chat.Admin.Application`，完成本轮后端及 HTTP 契约验收。第二阶段开发 Vben Admin，逐页迁移现有管理功能并接入新增治理流程。** 主流程均由 Chat Host 通过 ABP ConventionalControllers 暴露管理 API，业务规则由 `IczpNet.Chat.Domain` 承载。
+本项目统一交付 Chat 管理 API、业务治理能力和 Vben「即时通讯管理」。**第一阶段同时交付 `IczpNet.Chat.Admin.Application.Contracts` 和 `IczpNet.Chat.Admin.Application`，完成后端及 HTTP 契约验收。第二阶段开发 Vben Admin，逐页迁移现有管理功能并接入新增治理流程。** 所有管理 API 由 Chat Host 通过 ABP 自动生成至 `/api/chat/admin/...`，所有管理业务方法在 `IczpNet.Chat.Domain`。
 
 ## 代码边界
 
@@ -8,21 +8,43 @@
 | --- | --- |
 | `IczpNet.Chat.Domain` | Chat 业务规则、资源范围判定、状态转换、业务查询和幂等。优先复用 `IChatObjectManager`、`IRoomManager`、`ISessionManager`、`ISessionUnitManager`、`IMessageManager` 及现有领域服务。 |
 | `IczpNet.Chat.EntityFrameworkCore` | 实现 Domain 定义的仓储查询，负责索引、投影、分页及数据库操作。 |
-| 管理契约 | 为真实管理用例定义接口、输入输出 DTO、权限和本地化。首批需要共享契约时建立 `IczpNet.Chat.Admin.Application.Contracts`，仅引用所需共享定义。 |
-| `IczpNet.Chat.Admin.Application` | 处理 ABP 权限、传输输入校验、DTO 映射、Unit of Work 边界，调用 Domain 并返回结果。需要修改状态时调用具名领域方法。 |
-| `IczpNet.Chat.HttpApi.Host` | 组合 `ChatAdminApplicationModule`，注册管理程序集、认证和 Swagger。当前部署的 `chat-api` 由 Rctea.IM 的部署脚本构建此 Host。 |
+| `IczpNet.Chat.Admin.Application.Contracts`（必建） | 定义管理 AppService 接口、输入输出 DTO、ABP 权限常量、权限定义和本地化接入。使用 ABP Application.Contracts 与 Chat Domain.Shared 中必要的共享定义。 |
+| `IczpNet.Chat.Admin.Application`（必建） | 管理 API 的唯一实现项目。实现管理 Contracts 的 AppService 接口，处理 ABP 权限、请求校验、DTO 映射、Unit of Work 边界和调用 Domain。 |
+| `IczpNet.Chat.Admin.HttpApi`（按需） | 管理 API 的 Swagger 分组、文档过滤器或其他 HTTP 配置需要独立复用时，承载这些传输层配置，按需引用管理 Contracts。当前单 Host 方案由 Chat ApiHost 直接注册管理程序集。 |
+| `IczpNet.Chat.HttpApi.Host` | 组合 `ChatAdminApplicationModule`，注册自动 API、认证与 Swagger。当前部署的 `chat-api` 由 Rctea.IM 的部署脚本构建此 Host。 |
 | Vben `apps/web-antdv-next` | 通过现有请求客户端调用管理 API，按 ABP 授权呈现菜单和按钮，负责交互、分页和错误展示。 |
 
-`IczpNet.Chat.AdminApplication` 原有骨架沿用为带点的 `IczpNet.Chat.Admin.Application`。已有 `IczpNet.Chat.ManagementApplication` 和 `ManagementApplication.Contracts` 用于核对功能和兼容性。Chat Host 当前未启用旧管理模块；迁移时逐项核对旧代码及实际调用方。普通 Chat AppService 与管理 AppService 各自调用公共领域能力。
+### 项目依赖与启用条件
+
+```text
+IczpNet.Chat.Admin.Application.Contracts → IczpNet.Chat.Domain.Shared
+IczpNet.Chat.Admin.Application           → IczpNet.Chat.Admin.Application.Contracts
+                                         → IczpNet.Chat.Domain
+IczpNet.Chat.Admin.HttpApi（可选）        → IczpNet.Chat.Admin.Application.Contracts
+IczpNet.Chat.HttpApi.Host                → IczpNet.Chat.Admin.Application
+                                         → IczpNet.Chat.Admin.HttpApi（启用时）
+```
+
+- 后端首批新建 Contracts 项目并加入解决方案，定义 `ChatAdminApplicationContractsModule`。`ChatAdminApplicationModule` 通过项目引用和 ABP `[DependsOn]` 接入该模块。Contracts 对业务模型的依赖限于 Domain.Shared 的共享类型。
+- `Admin.HttpApi` 启用时由 ApiHost 组合。ApiHost 负责为 `ChatAdminApplicationModule` 的程序集配置 `ConventionalControllers` 和 `/api/chat/admin/...`。管理接口仍通过该程序集的 AppService 自动生成，`Admin.HttpApi` 禁止增加手写管理 Controller、转发端点或业务实现。
+
+`IczpNet.Chat.AdminApplication` 原有骨架沿用为带点的 `IczpNet.Chat.Admin.Application`。从旧 Application、ManagementApplication 和 Controller 盘点现有功能与调用方，复用或提炼其中的领域能力。普通 Chat AppService 和管理 AppService 通过各自的入口直接调用公共 Domain 方法。
 
 ## 管理 API 约定
 
-- Host 对管理程序集使用 `ConventionalControllers.Create`，`RootPath` 为 `chat/admin`，`RemoteServiceName` 为 `ChatAdmin`。生成路径位于 `/api/chat/admin/`。管理 AppService 必须使用 ABP 自动 API。类名和方法名遵循 ABP 约定，内部方法保持非公开，需要时用 `[RemoteService(false)]` 排除远程暴露。 [ABP 自动 API 控制器](https://abp.io/docs/10.7/framework/api-development/auto-controllers?LanguageCode=en)
-- 每批交付实际 HTTP 方法、路径、请求参数来源、DTO、分页契约、权限名和错误语义。验收时查运行中的 Swagger 与 `/api/abp/api-definition`，由 `ChatAdmin` 查找管理服务，检查新旧路由匹配唯一且无冲突。部署前通过 Vben 使用的代理实际访问管理路由。
+- Host 使用 `ConventionalControllers.Create(typeof(ChatAdminApplicationModule).Assembly, ...)`，设置 `RootPath = "chat/admin"` 与 `RemoteServiceName = "ChatAdmin"`。管理 AppService 按 ABP 约定生成 `/api/chat/admin/...`。内部方法保持非公开，需要时使用 `[RemoteService(false)]`。管理功能禁止手写 Controller、Minimal API、Host 转发或旧路由别名。 [ABP 自动 API 控制器](https://abp.io/docs/10.7/framework/api-development/auto-controllers?LanguageCode=en)
+- 旧 `/api/chat/...` 非 Admin 接口只作为迁移盘点依据。管理后端禁止调用旧接口或旧 AppService，Vben 的 Chat 管理请求禁止直连、通过代理转发或失败后回退到旧接口。列表、详情、选择器、关联查询、写操作和批处理都必须使用 ChatAdmin。
+- 每批交付实际 HTTP 方法、路径、请求参数来源、DTO、分页契约、权限名和错误语义。验收运行中的 Swagger 与 `/api/abp/api-definition`，逐项检查管理接口的程序集、`ChatAdmin` 服务归属、路径前缀和路由唯一性。部署前通过 Vben 使用的代理访问管理路由，并核对页面实际请求。
 - 权限沿用 ABP Permission Definition Provider 与本地化机制。各资源的读取、写入及高影响操作独立授权。复用既有权限时先确认语义和数据范围等价，新增权限时记录授予对象和租户侧别。用户传入的租户、资源 ID、筛选条件只能在授权范围内进一步缩小结果。
 - Domain 校验目标归属和可执行状态，并在写入时处理重复请求、并发和缓存失效。高影响动作记录操作者、租户、目标、原因及结果，沿用 ABP 审计和已有业务审计机制，裁剪消息正文、令牌、私有附件数据与其他敏感字段。
 - 消息、会话、成员和附件查询按真实数据量设计。使用受限筛选和仓储投影，大表优先使用稳定游标。需要用户视角时沿用 SessionUnit / DeletedRecorder 规则。管理诊断可见范围单独授权和验证。消息 `long` ID 在浏览器链路验证精度，管理 DTO 需要精确保留时采用字符串。
 - 统计沿用持久化来源与现有落库流程。新增统计须写清数据库基数、Redis 待刷增量、Worker 幂等落库、恢复与降级机制。需要数据库持久事件或其他可重放的持久化来源来恢复 Redis 清空前尚未刷盘的增量。在线连接操作沿用分布式连接状态，任务重试沿用现有 Worker 的认领及重试机制。
+
+### 旧业务逻辑提炼顺序
+
+1. 逐项定位旧 API 的真实实现和现有 Domain 能力，核对查询范围、状态转换、缓存和事件副作用，以及当前调用方。
+2. 已有领域方法直接复用。旧 AppService 或 Controller 中的业务查询、资源判断、状态变化、幂等与副作用协调，提炼为现有 Domain Manager 或领域服务的具名方法。确需查询优化时，在 Domain 定义仓储契约，由 EntityFrameworkCore 实现投影、索引查询和分页。
+3. 在 `IczpNet.Chat.Admin.Application.Contracts` 定义独立管理契约与权限，在 `IczpNet.Chat.Admin.Application` 实现薄 AppService。由 ABP 校验权限，委托 Domain 验证目标范围并执行业务，最后映射管理 DTO。仍有客户端调用的旧入口直接复用提炼后的领域方法，并按原契约执行回归测试。
 
 ## 业务对象和事实来源
 
@@ -41,7 +63,7 @@
 
 ## 待开发的 Chat 管理业务模块
 
-以下模块按业务资源组织在同一 `IczpNet.Chat.Admin.Application`，各自调用 `IczpNet.Chat.Domain`。批次一至四是本轮管理端基线，覆盖全部 13 个现有 Vben 菜单和新增的 Chat 核心业务管理。批次五为后续扩展。表中功能均为交付目标，括号中的路径为现有 Vben 菜单，领域类和实体是实现定位线索。以 [Vben Chat 路由](../../../abp-admin-vben/vue-vben-admin/apps/web-antdv-next/src/router/routes/modules/chat.ts)、[Chat Domain](../../src/IczpNet.Chat.Domain) 和 [旧管理应用服务](../../src/IczpNet.Chat.ManagementApplication) 作为盘点依据。
+以下模块按业务资源组织管理 Contracts 和 Application，由各 AppService 调用 `IczpNet.Chat.Domain`。批次一至四是本轮管理端基线，覆盖全部 13 个现有 Vben 菜单和新增的 Chat 核心业务管理。批次五为后续扩展。表中功能均为交付目标，括号中的路径为现有 Vben 菜单，领域类和实体是实现定位线索。以 [Vben Chat 路由](../../../abp-admin-vben/vue-vben-admin/apps/web-antdv-next/src/router/routes/modules/chat.ts)、[Chat Domain](../../src/IczpNet.Chat.Domain) 和 [旧管理应用服务](../../src/IczpNet.Chat.ManagementApplication) 作为盘点依据。
 
 ### 批次一 · 聊天身份与基础资料
 
@@ -217,7 +239,7 @@ Vben 开发资源详情的关联视图、治理待办、只读诊断、预检与
 
 | 扩展场景 | 实现方式 |
 | --- | --- |
-| 新增管理资源 | 按资源组织 AppService、DTO 与权限，例如聊天对象与会话各有业务入口。先找 Domain 中可复用的能力，再补明确的领域方法。新增服务沿用同一个 Host 注册，按实际 Swagger 更新 Vben 封装。 |
+| 新增管理资源 | 在管理 Contracts 按资源组织接口、DTO 与权限，在管理 Application 实现 AppService。先找 Domain 中可复用的能力，再补明确的领域方法。新增服务沿用同一个 Host 注册，按实际 Swagger 更新 Vben 封装。 |
 | 新增读模型或诊断 | Domain 定义查询范围和语义，仓储实现裁剪字段、投影、索引和分页。按资源独立定义响应，旧接口按原契约维护。 |
 | 新增写操作、批量操作或长任务 | AppService 调用具名领域命令。Domain 处理状态、并发和幂等。长任务复用现有作业设施，按需返回任务 ID 供管理 API 查询进度，记录处理上限和失败恢复方式。 |
 | 新增权限或版本 | 使用 ABP 权限定义与本地化，按资源和动作扩展。契约优先使用兼容性的新增字段与操作。确有不兼容需求时登记旧调用方、发布次序、并行兼容窗口和下线条件。 |
@@ -227,9 +249,9 @@ Vben 开发资源详情的关联视图、治理待办、只读诊断、预检与
 
 ## 第一阶段 · Admin.Application 后端
 
-1. 建立并编译管理项目，接入 Chat Host 的模块依赖和自动控制器注册。项目骨架阶段无需添加示例业务端点。首个真实用例交付后确认管理远程服务出现在 ABP API 定义中。
-2. 盘点当批页面与调用方，为每个用例定位 Domain Manager、实体及仓储。缺少能力时优先扩展领域入口；将旧 AppService 内的业务规则提取到 Domain，再由两个应用入口复用。对涉及缓存、作业、消息同步或外部副作用的变更列明重试及一致性处理。
-3. 定义管理契约和权限，实现薄 AppService 并发布测试环境。基于实际 Swagger/API 定义登记契约，覆盖空列表、边界分页、错误输入、未登录、读写授权、跨租户或跨资源访问、高影响动作审计和已有客户端回归。涉及写操作时补验并发和重试。
+1. 新建并编译 `IczpNet.Chat.Admin.Application.Contracts`，让现有管理 Application 引用其项目与 ABP 模块。使用 Chat ApiHost 的自动控制器注册，按项目依赖与启用条件评估 `Admin.HttpApi`。首个真实用例交付后确认管理远程服务出现在 ABP API 定义中。
+2. 盘点当批页面与调用方，按上文顺序复用、提炼或补足 Domain 方法。对涉及缓存、作业、消息同步或外部副作用的变更列明重试和一致性处理。
+3. 在 Contracts 定义接口、DTO 与权限，在 Application 实现薄 AppService 并发布测试环境。基于实际 Swagger/API 定义登记契约，覆盖空列表、边界分页、错误输入、未登录、读写授权、跨租户或跨资源访问、高影响动作审计和已有客户端回归。涉及写操作时补验并发和重试。
 4. 根据改动构建对应项目和 Chat Host，执行相关 Domain、Application 或 EF Core 测试。迁移期间保持原客户端契约。发生实体、索引变更时记录迁移影响，由获授权的发布流程执行。
 
 **进入 Vben 的条件**为批次一至四的后端交付项均已验收。交接记录包含管理 API 的实测 Swagger、请求和响应样例、权限及资源范围、分页与错误约定，以及治理动作的审计、幂等和恢复结果。
@@ -238,7 +260,7 @@ Vben 开发资源详情的关联视图、治理待办、只读诊断、预检与
 
 1. 后端验收后，优先在现有 `src/api/chat/` 封装内更新请求和 DTO。复用 `src/api/request.ts` 的认证、租户、反伪造与统一错误处理。按实际 base URL 追加管理路径，避免重复 `/api`。服务或 DTO 若由 OpenAPI 生成，按 Vben 仓库规则放入生成目录，并由业务 API 层调用。
 2. 按后端发布的 ABP `grantedPolicies` 配置路由与按钮，接入分页或游标和必要的确认交互。保持已有菜单路径，便于按页发布和回退。禁止在请求失败时转调旧管理接口。
-3. 运行 `pnpm --dir apps/web-antdv-next run typecheck`，用浏览器网络请求核对列表、详情、搜索选项和写操作均来自自动生成的管理路由。用无权、只读和可写账号联调，并验证分页、大整数 ID、错误提示和重复提交。
+3. 运行 `pnpm --dir apps/web-antdv-next run typecheck`，用浏览器网络请求逐项核对 Chat 管理调用均命中 `/api/chat/admin/...`。用无权、只读和可写账号联调，并验证失败时无旧接口回退，以及分页、大整数 ID、错误提示和重复提交。
 4. 当批先发布后端，再发布 Vben。记录接口与权限变更、联调结果和回退版本。需要回退时回退 Vben 发布版本，保持各已部署版本对应的后端契约，核查调用方之后再决定旧入口的下线计划。
 
 ## 完成标准
