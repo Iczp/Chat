@@ -116,10 +116,10 @@ public class CallCompensationWorker : AsyncPeriodicBackgroundWorkerBase
 
                         var contentObj = new CallContentInfo
                         {
-                            CallId = call.Id,
-                            CallMode = call.CallMode,
-                            MediaType = call.MediaType,
-                            EndReason = call.EndReason ?? Enums.CallEndReason.Normal,
+                            CallId = call.Id.ToString("D"),
+                            CallMode = (int)call.CallMode,
+                            MediaType = (int)call.MediaType,
+                            EndReason = (int)(call.EndReason ?? Enums.CallEndReason.Normal),
                             DurationSeconds = call.DurationSeconds,
                             HadScreenShare = call.HadScreenShare
                         };
@@ -128,7 +128,7 @@ public class CallCompensationWorker : AsyncPeriodicBackgroundWorkerBase
                             senderUnit,
                             m =>
                             {
-                                m.SetKeyValue(nameof(MessageTypes.Call), jsonContent);
+                                m.SetContentJson(jsonContent);
                                 return Task.FromResult<IczpNet.Chat.MessageSections.IContentEntity>(null!);
                             },
                             clientMessageId: call.SummaryClientMessageId);

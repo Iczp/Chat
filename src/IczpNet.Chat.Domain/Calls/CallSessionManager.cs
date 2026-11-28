@@ -555,6 +555,51 @@ public class CallSessionManager(
             ServerTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
         };
 
+        var chatObjectManager = LazyServiceProvider.LazyGetRequiredService<IczpNet.Chat.ChatObjects.IChatObjectManager>();
+        var ownerIds = await chatObjectManager.GetIdListByUserIdAsync(currentUserId);
+        if (ownerIds != null && ownerIds.Count > 0)
+        {
+            var myActiveParticipants = await participantRepository.GetListAsync(
+                x => ownerIds.Contains(x.OwnerId) && x.IsActiveBusy,
+                cancellationToken: cancellationToken);
+
+            foreach (var p in myActiveParticipants)
+            {
+                var record = await callRecordRepository.FindAsync(p.CallId, cancellationToken: cancellationToken);
+                if (record == null || record.State == CallSessionState.Ended)
+                    continue;
+
+                if (p.Status == CallParticipantStatus.Invited && (!p.RingExpireAt.HasValue || p.RingExpireAt.Value > clock.Now))
+                {
+                    snapshot.IncomingCalls ??= [];
+                    snapshot.IncomingCalls.Add(new IncomingCallDto
+                    {
+                        CallId = record.Id.ToString("D"),
+                        SessionId = record.SessionId,
+                        CallMode = (int)record.CallMode,
+                        MediaType = (int)record.MediaType,
+                        StateVersion = record.StateVersion.ToString(),
+                        InviteRound = p.InviteRound
+                    });
+                }
+                else if (p.Status is CallParticipantStatus.Accepted
+                    or CallParticipantStatus.Connecting
+                    or CallParticipantStatus.Connected
+                    or CallParticipantStatus.Reconnecting)
+                {
+                    snapshot.CurrentCall ??= new CurrentCallDto
+                    {
+                        CallId = record.Id.ToString("D"),
+                        SessionId = record.SessionId,
+                        CallMode = (int)record.CallMode,
+                        MediaType = (int)record.MediaType,
+                        StateVersion = record.StateVersion.ToString(),
+                        RoomEpoch = record.RoomEpoch
+                    };
+                }
+            }
+        }
+
         if (sessionId.HasValue)
         {
             var activeGroup = await callRecordRepository.FindAsync(
