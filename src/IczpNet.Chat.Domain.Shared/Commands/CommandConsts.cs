@@ -87,4 +87,14 @@ public class CommandConsts
     /// </summary>
     public static string Kicked { get; set; } = nameof(Kicked).ToLower();
 
+    // 音视频通话瞬态信令事件（不落库，通过专用分布式事件定向投递）
+    public const string CallInvited = "call.invited@rtc";
+    public const string CallAccepted = "call.accepted@rtc";
+    public const string CallRejected = "call.rejected@rtc";
+    public const string CallCanceled = "call.canceled@rtc";
+    public const string CallHandledElsewhere = "call.handled@rtc";
+    public const string CallRoomUpdated = "call.room_updated@rtc";
+    public const string CallRoomRotated = "call.room_rotated@rtc";
+    public const string CallEnded = "call.ended@rtc";
+
 }

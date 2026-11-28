@@ -84,6 +84,11 @@ public class ChatDbContext(DbContextOptions<ChatDbContext> options) : AbpDbConte
     public DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; set; }
     public DbSet<CallCenterConfiguration> CallCenterConfiguration { get; set; }
     public DbSet<CallCenterAssignment> CallCenterAssignment { get; set; }
+    public DbSet<IczpNet.Chat.Calls.CallRecord> CallRecord { get; set; }
+    public DbSet<IczpNet.Chat.Calls.CallParticipant> CallParticipant { get; set; }
+    public DbSet<IczpNet.Chat.Calls.CallRoomLifecycle> CallRoomLifecycle { get; set; }
+    public DbSet<IczpNet.Chat.Calls.CallIdempotencyRecord> CallIdempotencyRecord { get; set; }
+    public DbSet<IczpNet.Chat.Calls.CallWebhookEvent> CallWebhookEvent { get; set; }
 
     public DbSet<ChatObject> ChatObject { get; set; }
     public DbSet<ChatObjectCategory> ChatObjectCategory { get; set; }

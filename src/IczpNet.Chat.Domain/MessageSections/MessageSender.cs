@@ -200,7 +200,7 @@ public class MessageSender(
         //.Select(x => x.Id)
             .ToList();
         Assert.If(selectedMessageList.Count != messageIdList.Count, "Some selected messages are not visible or cannot be forwarded.");
-        Assert.If(selectedMessageList.Any(x => x.MessageType == MessageTypes.Template), "Template messages cannot be forwarded in chat history.");
+        Assert.If(selectedMessageList.Any(x => x.MessageType == MessageTypes.Template || x.MessageType == MessageTypes.Call), "Template and Call messages cannot be forwarded in chat history.");
         var description = selectedMessageList.Take(3)
             .Select(x => $"{x.Sender?.Name}:{x.GetTypedContentEntity()?.GetBody()}")
             .ToArray()

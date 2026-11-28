@@ -802,6 +802,49 @@ public static class ChatDbContextModelCreatingExtensions
                 }
             });
         }
+
+        builder.Entity<IczpNet.Chat.Calls.CallRecord>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(IczpNet.Chat.Calls.CallRecord), ChatDbProperties.DbSchema);
+            b.Property(x => x.StateVersion).IsConcurrencyToken();
+            b.HasIndex(x => x.SessionId)
+                .IsUnique()
+                .HasDatabaseName("UX_Chat_CallRecord_ActiveGroupSession")
+                .HasFilter("[CallMode] = 2 AND [State] <> 4");
+            b.HasIndex(x => new { x.State, x.NextCheckAt });
+            b.HasIndex(x => x.SummaryClientMessageId).IsUnique();
+            b.HasIndex(x => x.SummaryMessageId).IsUnique().HasFilter("[SummaryMessageId] IS NOT NULL");
+        });
+
+        builder.Entity<IczpNet.Chat.Calls.CallParticipant>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(IczpNet.Chat.Calls.CallParticipant), ChatDbProperties.DbSchema);
+            b.HasIndex(x => new { x.CallId, x.SessionUnitId }).IsUnique();
+            b.HasIndex(x => x.OwnerId)
+                .IsUnique()
+                .HasDatabaseName("UX_Chat_CallParticipant_ActiveOwner")
+                .HasFilter("[IsActiveBusy] = 1");
+        });
+
+        builder.Entity<IczpNet.Chat.Calls.CallRoomLifecycle>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(IczpNet.Chat.Calls.CallRoomLifecycle), ChatDbProperties.DbSchema);
+            b.HasIndex(x => new { x.CallId, x.RoomEpoch }).IsUnique();
+            b.HasIndex(x => new { x.ActionState, x.NextRetryAt });
+        });
+
+        builder.Entity<IczpNet.Chat.Calls.CallIdempotencyRecord>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(IczpNet.Chat.Calls.CallIdempotencyRecord), ChatDbProperties.DbSchema);
+            b.HasIndex(x => new { x.SessionUnitId, x.DeviceId, x.Action, x.RequestId }).IsUnique();
+        });
+
+        builder.Entity<IczpNet.Chat.Calls.CallWebhookEvent>(b =>
+        {
+            b.ToTable(ChatDbProperties.DbTablePrefix + nameof(IczpNet.Chat.Calls.CallWebhookEvent), ChatDbProperties.DbSchema);
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).HasMaxLength(128);
+        });
     }
 
     public static void ConfigureEnums(this EntityTypeBuilder b)

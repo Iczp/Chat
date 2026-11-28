@@ -19,6 +19,7 @@ public static class MessageExtentions
         MessageTypes.RedEnvelope,
         MessageTypes.Html,
         MessageTypes.Template,
+        MessageTypes.Call,
     ];
 
     /// <summary>

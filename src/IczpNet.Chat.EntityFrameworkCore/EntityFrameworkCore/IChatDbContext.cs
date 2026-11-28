@@ -80,6 +80,11 @@ public interface IChatDbContext : IEfCoreDbContext
     DbSet<ScheduledArticleMessage> ScheduledArticleMessage { get; }
     DbSet<CallCenterConfiguration> CallCenterConfiguration { get; }
     DbSet<CallCenterAssignment> CallCenterAssignment { get; }
+    DbSet<IczpNet.Chat.Calls.CallRecord> CallRecord { get; }
+    DbSet<IczpNet.Chat.Calls.CallParticipant> CallParticipant { get; }
+    DbSet<IczpNet.Chat.Calls.CallRoomLifecycle> CallRoomLifecycle { get; }
+    DbSet<IczpNet.Chat.Calls.CallIdempotencyRecord> CallIdempotencyRecord { get; }
+    DbSet<IczpNet.Chat.Calls.CallWebhookEvent> CallWebhookEvent { get; }
 
 
     DbSet<ChatObject> ChatObject { get; }

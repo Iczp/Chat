@@ -89,4 +89,10 @@ public enum MessageTypes
     /// </summary>
     [Description("模板消息")]
     Template = 13,
+
+    /// <summary>
+    /// 音视频通话记录
+    /// </summary>
+    [Description("音视频通话")]
+    Call = 20,
 }

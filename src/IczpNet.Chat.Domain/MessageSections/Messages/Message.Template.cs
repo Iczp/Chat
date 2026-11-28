@@ -92,6 +92,18 @@ public partial class Message
 
     public virtual object GetContentDto()
     {
+        if (MessageType == MessageTypes.Call && !string.IsNullOrWhiteSpace(ContentJson))
+        {
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<IczpNet.Chat.Calls.CallContentInfo>(ContentJson);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return new IczpNet.Chat.Calls.CallContentInfo();
+            }
+        }
+
         // 模板历史与重试直接使用已提交的消息快照，避免离开创建事务后懒加载内容表。
         if (MessageType == MessageTypes.Template && !string.IsNullOrWhiteSpace(ContentJson))
         {
