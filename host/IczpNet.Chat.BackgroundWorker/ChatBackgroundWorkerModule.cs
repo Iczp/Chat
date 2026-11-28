@@ -71,6 +71,8 @@ public class ChatBackgroundWorkerModule : AbpModule
             new Medallion.Threading.Redis.RedisDistributedSynchronizationProvider(
                 provider.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>().GetDatabase()));
         var configuration = context.Services.GetConfiguration();
+        context.Services.AddHttpClient();
+        Configure<IczpNet.Chat.Calls.LiveKitOptions>(configuration.GetSection(IczpNet.Chat.Calls.LiveKitOptions.SectionName));
         Configure<MessageOptions>(options =>
         {
             var section = configuration.GetSection("MessageOptions");

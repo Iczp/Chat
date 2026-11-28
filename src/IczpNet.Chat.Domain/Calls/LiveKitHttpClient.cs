@@ -110,7 +110,18 @@ public class LiveKitHttpClient(
 
         var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
         using var doc = JsonDocument.Parse(payloadJson);
-        if (doc.RootElement.TryGetProperty("sha256", out var shaEl))
+        var root = doc.RootElement;
+        if (!string.IsNullOrWhiteSpace(Options.ApiKey) &&
+            (!root.TryGetProperty("iss", out var issEl) || !string.Equals(issEl.GetString(), Options.ApiKey, StringComparison.Ordinal)))
+            return false;
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (root.TryGetProperty("exp", out var expEl) && expEl.TryGetInt64(out var exp) && exp < now - 5)
+            return false;
+        if (root.TryGetProperty("nbf", out var nbfEl) && nbfEl.TryGetInt64(out var nbf) && nbf > now + 5)
+            return false;
+
+        if (root.TryGetProperty("sha256", out var shaEl))
         {
             var bodyHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(rawBody ?? string.Empty)));
             return string.Equals(shaEl.GetString(), bodyHash, StringComparison.Ordinal);

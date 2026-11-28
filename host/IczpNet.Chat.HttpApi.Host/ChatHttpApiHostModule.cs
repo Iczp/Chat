@@ -106,6 +106,8 @@ public class ChatHttpApiHostModule : AbpModule
                 provider.GetRequiredService<IConnectionMultiplexer>().GetDatabase()));
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+        context.Services.AddHttpClient();
+        Configure<IczpNet.Chat.Calls.LiveKitOptions>(configuration.GetSection(IczpNet.Chat.Calls.LiveKitOptions.SectionName));
         Configure<MessageOptions>(options =>
         {
             var section = configuration.GetSection("MessageOptions");
