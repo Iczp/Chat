@@ -1,22 +1,22 @@
-# GotoIM 音视频通话与屏幕共享协议规范（v1 冻结候选稿）
+# GotoIM 音视频通话与屏幕共享协议规范（v1 冻结基线）
 
 > 适用仓库：`IczpNet.Chat`（领域与接口契约）、`Rctea.IM`（宿主与部署）、`gotoim-electron`（Electron 桌面端）、`gotoim-flutter`（Flutter 跨端）。  
-> 本版已收口：SQL 过滤唯一并发锁、群接听条件更新与容量上限、双域 `stateVersion` 与 `active` 对账清理、幂等重签发、`DeviceSessionId` 强绑定、1v1 计时与单方断线终结、`CallRoomLifecycle` 每代房间关闭闭环、LiveKit 内置 TURN 唯一凭证来源、合并转发向后兼容及 `ListRooms` API 校准。
+> 本版已收口全部冻结阻塞项：SQL 行锁串行名额裁决、全员占线释放、`CallRoomLifecycle` 建房/关房/换房闭环、持久化首次/恢复邀请投递、`TryMarkParticipantConnectedAsync` Webhook/Worker 统一入房转换、`heartbeat`/`RoomDisconnected` 主动对账换房、按 `(accountId, scopeKey)` 序号与查询范围收敛的 `active` 对账、以及按 `(callId, inviteRound)` 轮次去重以支持 `inviteMore` 再次邀请。
 
 ---
 
 ## 1. 核心架构与不可变原则
 
 1. **SQL 为通话权威真相源，Redis 仅作加速缓存**：
-   - 通话主状态（`CallRecord`）、参与者占线/媒体态（`CallParticipant`）、每代房间生命周期（`CallRoomLifecycle`）、幂等操作凭证（`CallIdempotencyRecord`）、Webhook 去重（`CallWebhookEvent`）均持久化在 SQL Server。
-   - 跨通话占线、同群单活与同参与者接听抢占全部由 **SQL 过滤唯一索引 + 条件原子更新** 保证，在多后端实例并发下得出完全一致的结果。
+   - 通话主状态（`CallRecord`）、参与者占线/建连截止/邀请轮次与媒体态（`CallParticipant`）、每代房间生命周期（`CallRoomLifecycle`）、幂等操作记录（`CallIdempotencyRecord`）、Webhook 去重（`CallWebhookEvent`）均持久化在 SQL Server。
+   - 跨通话占线、同群单活由 **SQL 过滤唯一索引** 保证；同一 `CallId` 下的名额校验、参与者占位/释放与 `StateVersion++` 必须在同一 SQL 事务内通过 **`CallRecord` 行级更新锁（`UPDLOCK, ROWLOCK`）串行裁决**。
 2. **信令面与媒体面分离**：
-   - **呼叫信令面**：复用 `ChatHub`（`/signalr-hubs/chat`）+ HTTP REST API（`/api/chat/call/*`），使用**专用分布式事件** `SendCallSignalToClientDistributedEto` 与专用 `SendCallSignalToClientDistributedEventHandler` 定向投递，绝不套用 `SendMessageToClientDistributedEventHandler` 默认广播分支。
-   - **媒体传输面**：自建 LiveKit SFU + 内置 TURN；服务端配置 `room.auto_create: false` 并显式创建房间；TURN 中继配置与动态凭证**完全由 LiveKit 在建连握手时统一下发**，Chat 后端仅下发 `rtcUrl`、`token`（TTL `180s`）与 `iceTransportPolicy`。
+   - **呼叫信令面**：复用 `ChatHub`（`/signalr-hubs/chat`）+ HTTP REST API（`/api/chat/call/*`），通过专用分布式事件 `SendCallSignalToClientDistributedEto` + `SendCallSignalToClientDistributedEventHandler` 定向投递，绝不走 `SendMessageToClientDistributedEventHandler` 默认会话广播分支。
+   - **媒体传输面**：自建 LiveKit SFU + 内置 TURN；服务端配置 `room.auto_create: false` 并显式创建房间；**仅允许对 `CallRoomLifecycle.ActionState == Active` 的当前 `RoomEpoch` 签发 Token**（TTL `180s`）；内置 TURN 凭据完全由 LiveKit 握手下发。
 3. **安全与精度红线**：
-   - SignalR 广播中**严禁携带** `token`；普通窗口状态订阅**严禁下发** `token`。
-   - 客户端请求中的 `deviceId` 不可信；设备身份与设备会话唯一由服务端从已验证令牌 Claims 提取 `"device_id"` 与 `DeviceSessionTicket.SessionClaim`（`DeviceSessionId`），并经 `ITokenRevocationChecker` + `IChatDeviceSessionValidator` 校验。
-   - 大整数 ID（`MessageId`、`SummaryMessageId`、`StateVersion`）跨 JSON/JS 边界统一以 `string` 编解码。
+   - SignalR 广播与普通窗口状态订阅中**严禁携带** `token`。
+   - 客户端请求中的 `deviceId` 不可信；设备身份与会话唯一由服务端从已验证令牌 Claims 提取 `"device_id"` 与 `DeviceSessionTicket.SessionClaim`（`DeviceSessionId`），并经 `ITokenRevocationChecker` + `IChatDeviceSessionValidator` 校验。
+   - 大整数 ID（`MessageId`、`SummaryMessageId`、`StateVersion`）跨 JSON/JS 边界统一使用 `string` 编解码。
 
 ---
 
@@ -24,9 +24,9 @@
 
 ### 2.1 消息类型与转发限制
 - `src/IczpNet.Chat.Domain.Shared/Enums/MessageTypes.cs`：新增 `Call = 20`（`[Description("音视频通话")]`）。
-- **双路径禁转（保持现有历史消息行为兼容）**：
+- **双路径禁转（保持现有存量消息兼容）**：
   1. **单条/批量转发（`MessageManager.ForwardAsync`）**：`MessageExtentions.DisabledForwardList` 加入 `MessageTypes.Call`。
-  2. **合并转发（`MessageSenderAppService.SendHistoryAsync`）**：**保留当前仅拦截 `Template` 的存量语义，在此基础上精确追加 `MessageTypes.Call`**（不引入 `IsDisabledForward()` 以免误伤存量 `Cmd`/`RedEnvelope`/`Html` 的合并转发）：
+  2. **合并转发（`MessageSenderAppService.SendHistoryAsync`）**：保留现有 `Template` 拦截语义并精确追加 `MessageTypes.Call`（不改为 `IsDisabledForward()`，避免误伤 `Cmd`/`RedEnvelope`/`Html` 存量合并转发）：
      ```csharp
      Assert.If(
          selectedMessageList.Any(x => x.MessageType == MessageTypes.Template || x.MessageType == MessageTypes.Call),
@@ -34,15 +34,14 @@
      ```
 
 ### 2.2 通话核心枚举与容量常量
-
-- **群房容量上限常量**：`CallConsts.MaxGroupParticipants = 16`（可通过 `LiveKitOptions` 配置但默认冻结为 `16`；`Direct` 模式固定 `MaxParticipants = 2`）。
+- `CallConsts.MaxGroupParticipants = 16`（群单房间最大占用人数上限，包含所有 `IsActiveBusy == 1` 成员；`Direct` 模式固定 `2`）。
 
 | 枚举名 | 值定义 | 说明 |
 | --- | --- | --- |
 | `CallMode` | `1 = Direct`（1v1 单聊）、`2 = Group`（群组多人） | 决定呼叫、重连与终态策略 |
 | `CallMediaType` | `1 = Audio`（语音）、`2 = Video`（视频） | 初始媒体模式 |
-| `CallSessionState` | `1 = Ringing`（振铃中）、`2 = Connecting`（已接听等待媒体就绪）、`3 = Connected`（媒体通话中）、`4 = Ended`（已结束） | 1v1 需**双方**媒体入房才进 `Connected` |
-| `CallParticipantStatus` | `1 = Invited`（振铃中）、`2 = Accepted`（已点接听）、`3 = Connecting`（媒体建连中）、`4 = Connected`（媒体在房中）、`5 = Reconnecting`（异常断线宽限期）、`6 = Rejected`（已拒绝）、`7 = Timeout`（未接超时）、`8 = Left`（已离开）、`9 = Revoked`（安全强制移除） | 严格区分「已接受」「建连中」「媒体已连接」「断线重连中」 |
+| `CallSessionState` | `1 = Ringing`（振铃中）、`2 = Connecting`（等待媒体就绪）、`3 = Connected`（媒体通话中）、`4 = Ended`（已结束） | 1v1 需**双方**媒体入房才进 `Connected` |
+| `CallParticipantStatus` | `1 = Invited`（振铃中）、`2 = Accepted`（已接听）、`3 = Connecting`（建连中）、`4 = Connected`（媒体在房中）、`5 = Reconnecting`（断线宽限期）、`6 = Rejected`（已拒绝）、`7 = Timeout`（未接超时）、`8 = Left`（已离开）、`9 = Revoked`（安全强制移除） | 严格拆分「已接受」「建连中」「媒体已连接」「断线重连中」 |
 | `CallEndReason` | `1 = Normal`（正常挂断）、`2 = Canceled`（主叫取消）、`3 = Rejected`（对方拒绝）、`4 = Busy`（对方忙线）、`5 = Timeout`（无人接听超时）、`6 = NetworkError`（网络/建连超时/断线超窗）、`7 = Revoked`（安全撤销终止） | 终态结算原因 |
 
 ### 2.3 SQL 持久化实体与并发约束（需生成 EF Core Migration）
@@ -51,28 +50,28 @@
 | 字段 | 类型 | 约束/索引 | 说明 |
 | --- | --- | --- | --- |
 | `Id` | `Guid` | PK | 即 `CallId` |
-| `SessionId` | `Guid` | 索引；**过滤唯一索引** `UX_Chat_CallRecord_ActiveGroupSession` ON `(SessionId)` WHERE `CallMode = 2 AND State <> 4` | **DB 级保证同群同时最多 1 个活跃群通话** |
+| `SessionId` | `Guid` | **过滤唯一索引** `UX_Chat_CallRecord_ActiveGroupSession` ON `(SessionId)` WHERE `CallMode = 2 AND State <> 4` | **DB 级保证同群最多 1 个活跃群通话** |
 | `CallMode` | `CallMode` | NotNull | `Direct` / `Group` |
 | `MediaType` | `CallMediaType` | NotNull | 初始 `Audio` / `Video` |
-| `State` | `CallSessionState` | 索引 `(State, NextCheckAt)` | 通话全局状态 |
-| `StateVersion` | `long` | ConcurrencyToken | **单调递增版本号**，每次状态或成员变化严格 `+1` |
+| `State` | `CallSessionState` | 索引 `(State, NextCheckAt)` | 全局状态 |
+| `StateVersion` | `long` | ConcurrencyToken | **单调递增版本号**（每次同 CallId 状态/成员变更严格 `+1`） |
 | `InitiatorUnitId` | `Guid` | NotNull | 发起人 `SessionUnitId` |
 | `InitiatorOwnerId` | `long` | NotNull | 发起人 `ChatObjectId` |
-| `InitiatorDeviceId` | `string` | MaxLen 128 | 发起人已验证设备 ID |
+| `InitiatorDeviceId` | `string` | MaxLen 128 | 发起端已验证设备 ID |
 | `RoomEpoch` | `int` | Default 1 | 当前有效房间代数 |
 | `RoomName` | `string` | MaxLen 128 | `gotoim_call_{CallId:N}_v{RoomEpoch}` |
-| `LiveKitRoomSid` | `string` | Nullable, MaxLen 64 | 当前代显式 `CreateRoom` 返回的 SID |
-| `RingExpireAt` | `DateTime` | NotNull | 振铃超时截止时刻（UTC） |
-| `ConnectExpireAt` | `DateTime?` | Nullable | `Connecting` 建连超时截止时刻（如 `+20s`） |
-| `LastActiveAt` | `DateTime` | NotNull | 最近活动/心跳时间 |
+| `LiveKitRoomSid` | `string` | Nullable, MaxLen 64 | 当前代已激活房间 SID |
+| `BannerNotifyState` | `byte` | Default 0 | `0=None / 1=Pending / 2=Dispatched`（群横幅通知持久化补偿标记） |
+| `RingExpireAt` | `DateTime` | NotNull | 1v1 主体振铃超时截止时刻 |
+| `LastActiveAt` | `DateTime` | NotNull | 最近活动/心跳时刻 |
 | `NextCheckAt` | `DateTime?` | 索引 | Worker 下一次到期检查时间 |
 | `ConnectedAt` | `DateTime?` | Nullable | **计时起点**：1v1 为双方均达 `Connected` 时刻；Group 为首位被叫达 `Connected` 时刻 |
 | `EndedAt` | `DateTime?` | Nullable | 结束时刻 |
 | `EndReason` | `CallEndReason?` | Nullable | 结束原因 |
-| `DurationSeconds` | `int` | Default 0 | 仅当 `ConnectedAt != null` 时计算 `EndedAt - ConnectedAt`，否则固定为 `0` |
+| `DurationSeconds` | `int` | Default 0 | 仅当 `ConnectedAt != null` 时为 `EndedAt - ConnectedAt`，否则固定 `0` |
 | `HadScreenShare` | `bool` | Default false | 是否发生过屏幕共享 |
 | `MaxParticipants` | `int` | Default 0 | 峰值在房人数 |
-| `SummaryClientMessageId` | `string` | NotNull, MaxLen 26, Unique | **固定 24 字符幂等消息键**：`"c_" + Base64Url(CallId 16B)`，满足 `MessageManager.cs:369` `<= 26` 字符限制 |
+| `SummaryClientMessageId` | `string` | NotNull, MaxLen 26, Unique | **固定 24 字符幂等键**：`"c_" + Base64Url(CallId 16B)`，满足 `MessageManager.cs:369` `<= 26` 字符限制 |
 | `SummaryMessageId` | `long?` | Nullable, Unique Filtered Index | 关联已落库 `Message.Id` |
 | `SummaryDispatchStatus` | `byte` | `0=None, 1=Pending, 2=Completed` | 同事务 Outbox 标记；Worker 扫描 `State == Ended && SummaryDispatchStatus == Pending` 补偿 |
 
@@ -82,14 +81,17 @@
 | `Id` | `Guid` | PK | — |
 | `CallId` | `Guid` | 联合唯一 `(CallId, SessionUnitId)` | 所属通话 |
 | `SessionUnitId` | `Guid` | 索引 | 参与者会话单元 |
-| `OwnerId` | `long` | **过滤唯一索引** `UX_Chat_CallParticipant_ActiveOwner` ON `(OwnerId)` WHERE `IsActiveBusy = 1` | **DB 级保证跨通话占线互斥**：同一 `OwnerId` 任何时刻最多仅 1 条活跃占线记录 |
-| `IsActiveBusy` | `bool` | NotNull | 当 `Status` 属于 `Invited(1)/Accepted(2)/Connecting(3)/Connected(4)/Reconnecting(5)` 时置 `1`，终态 `Rejected/Timeout/Left/Revoked` 时置 `0` |
+| `OwnerId` | `long` | **过滤唯一索引** `UX_Chat_CallParticipant_ActiveOwner` ON `(OwnerId)` WHERE `IsActiveBusy = 1` | **DB 级保证跨通话占线互斥** |
+| `IsActiveBusy` | `bool` | NotNull | `Invited(1)/Accepted(2)/Connecting(3)/Connected(4)/Reconnecting(5)` 时为 `1`（计入群容量占用），终态时置 `0` |
 | `Status` | `CallParticipantStatus` | NotNull | 当前参与者状态 |
+| `InviteRound` | `int` | Default 0 | **邀请轮次**：首次被邀为 `1`，`inviteMore` 再次邀请已拒绝/超时/离开成员时递增 `+1` |
+| `InviteNotifyState` | `byte` | Default 0 | **持久化来电投递标记**：`0=None / 1=Pending / 2=Dispatched`（正常建房与 Worker 恢复建房共用投递） |
 | `DeviceId` | `string` | Nullable, MaxLen 128 | 绑定已验证 `device_id` |
-| `DeviceSessionId` | `string` | Nullable, MaxLen 128 | 绑定已验证设备会话 ID（`refresh-token` / 重放均必须核对） |
+| `DeviceSessionId` | `string` | Nullable, MaxLen 128 | 绑定已验证设备会话 ID |
 | `LiveKitParticipantSid` | `string` | Nullable, MaxLen 64 | 当前媒体连接 SID |
 | `RingExpireAt` | `DateTime?` | Nullable | 个人振铃超时时刻 |
-| `DisconnectDeadlineAt` | `DateTime?` | Nullable | 异常断线重连宽限截止时刻（断线时刻 `+20s`） |
+| `ConnectExpireAt` | `DateTime?` | Nullable | **个人独立建连截止时刻**（`accept`/`join` 时单独写入 `+20s`） |
+| `DisconnectDeadlineAt` | `DateTime?` | Nullable | 个人异常断线重连宽限截止时刻（断线时刻 `+20s`） |
 | `LastHeartbeatAt` | `DateTime?` | Nullable | 最后心跳时刻 |
 | `AcceptedAt` / `ConnectedAt` / `LeftAt` | `DateTime?` | Nullable | 状态时间戳 |
 
@@ -102,17 +104,19 @@
 | `RoomName` | `string` | MaxLen 128 | 房间名 |
 | `LiveKitRoomSid` | `string` | Nullable, MaxLen 64 | LiveKit 返回 SID |
 | `ActionState` | `byte` | 索引 `(ActionState, NextRetryAt)` | `1=Creating` / `2=Active` / `3=Closing` / `4=Closed` / `5=CreateFailed` |
-| `CloseReason` | `string` | Nullable, MaxLen 64 | `CallEnded` / `RoomRotated` / `CreateAborted` |
-| `RetryCount` | `int` | Default 0 | `DeleteRoom` 重试次数 |
-| `NextRetryAt` | `DateTime?` | Nullable | 退避下次重试时间 |
-| `ClosedAt` | `DateTime?` | Nullable | 确认关闭完成时刻 |
+| `RotationNotifyState` | `byte` | Default 0 | `0=None` / `1=Pending`（换房已 `Active` 待补发 `call.room_rotated@rtc`）/ `2=Dispatched`（已投递） |
+| `CloseReason` | `string` | Nullable, MaxLen 64 | `CallEnded` / `RoomRotated` / `LateCreateCleanup` |
+| `RetryCount` | `int` | Default 0 | 重试次数 |
+| `CreateDeadlineAt` | `DateTime?` | Nullable | `Creating` 最迟确认建房时刻（创建 `+15s`） |
+| `NextRetryAt` | `DateTime?` | Nullable | 下次重试检查时刻 |
+| `ClosedAt` | `DateTime?` | Nullable | 确认关房完成时刻 |
 
 #### (4) `CallIdempotencyRecord` & `CallWebhookEvent`
-- `CallIdempotencyRecord`：唯一键 `(SessionUnitId, DeviceId, Action, RequestId)`，保留 24 小时。**仅存储业务结果事实（`CallId`、`ResultCode`），绝不缓存含 `token` 的旧响应 JSON。**
-- `CallWebhookEvent`：主键 `EventId`（LiveKit Webhook `event.id`），记录 `RoomName`、`RoomSid`、`EventType`、`ProcessedAt`，实现 Webhook 严格去重。
+- `CallIdempotencyRecord`：唯一键 `(SessionUnitId, DeviceId, Action, RequestId)`，保留 24 小时。仅记录 `(CallId, ResultCode)` 等业务事实，**绝不缓存含 `token` 的旧响应**。
+- `CallWebhookEvent`：主键 `EventId`（LiveKit `event.id`），实现 Webhook 严格去重。
 
 ### 2.4 `MessageTypes.Call = 20` 内容快照契约（`CallContentInfo`）
-存储于 `Message.ContentJson`（由 `Message.GetContentDto()` 反序列化），结构体与 `MessageTypes.Template` 同级轻量快照：
+存储于 `Message.ContentJson`（由 `Message.GetContentDto()` 反序列化）：
 ```json
 {
   "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
@@ -131,16 +135,16 @@
   "endedAt": 1795836185000
 }
 ```
-- **旧版客户端兼容**：遇到未知 `MessageType = 20` 时降级展示安全占位 `[当前版本不支持通话记录，请升级]`，不中断 `MessageChange` 增量拉取。
+- **旧版客户端兼容**：遇到未知 `MessageType = 20` 降级展示安全文案 `[当前版本不支持通话记录，请升级]`，不中断 `MessageChange` 增量拉取。
 
 ---
 
-## 3. SignalR 瞬态信令契约与双域版本控制
+## 3. SignalR 瞬态信令契约与客户端对账规则
 
 ### 3.1 `CommandConsts` 与专用定向路由
-新增 8 个瞬态信令常量，经独立的 **`SendCallSignalToClientDistributedEto` + `SendCallSignalToClientDistributedEventHandler`** 投递，严格按 `TargetSessionUnitIds` / `TargetOwnerIds` / `ExcludeDeviceIds` 过滤，绝不走普通消息默认广播分支：
+经独立的 `SendCallSignalToClientDistributedEto` + `SendCallSignalToClientDistributedEventHandler` 投递：
 
-| 常量名 | 指令值 | 所属版本域 | 目标精确范围 |
+| 常量名 | 指令值 | 版本域 | 目标精确范围 |
 | --- | --- | --- | --- |
 | `CallInvited` | `call.invited@rtc` | `personal` | 仅本次受邀 `TargetUnitIds` 在线设备（排除发起设备） |
 | `CallAccepted` | `call.accepted@rtc` | `personal` | 主叫设备 / 已在房成员设备 |
@@ -149,18 +153,28 @@
 | `CallHandledElsewhere` | `call.handled@rtc` | `personal` | 同 `OwnerId` 除操作设备外的**其他在线设备** |
 | `CallRoomRotated` | `call.room_rotated@rtc` | `personal` | 当前仍合法在房/重连中的绑定设备 |
 | `CallEnded` | `call.ended@rtc` | `personal` + `banner` | 本场通话相关所有在线设备 + 群横幅收起 |
-| `CallRoomUpdated` | `call.room_updated@rtc` | **`banner`** | 目标 `SessionId` 在线成员（仅刷新群聊顶部横幅） |
+| `CallRoomUpdated` | `call.room_updated@rtc` | **`banner`** | 目标 `SessionId` 在线成员（仅刷新群横幅） |
 
-### 3.2 同版本多事件乱序与去重规则（解决同版本误丢）
-由于同一次群发起操作（如 `stateVersion = "1"`）会同时下发 `call.invited@rtc`（给受邀人）与 `call.room_updated@rtc`（给全群横幅），客户端**严禁**混用同一个全局版本号来互丢事件：
-1. **双域隔离游标**：客户端对每个 `callId` 分别维护：
-   - `personalStateVersion`（控制个人振铃/接听/通话/换房/结束状态机）；
-   - `bannerStateVersion`（控制群聊顶部活跃横幅，仅由 `call.room_updated@rtc`、`call.ended@rtc` 与 `active.sessionGroupCall` 更新）。
-   `call.room_updated@rtc` **不得修改** `personalStateVersion`！
-2. **同域内版本与去重判定**：
-   - `incoming.stateVersion < domainLastVersion` → 严格丢弃（迟到旧状态）；
-   - `incoming.stateVersion > domainLastVersion` → 更新本地版本并应用；
-   - `incoming.stateVersion == domainLastVersion` → 按 `(callId, command, stateVersion)` 做命令幂等去重；其中若本设备本地对 `callId` 已进入过 `Accepted / Rejected / Handled / Ended`（记录 `dismissedCallIds`），**永不再因任何 `call.invited@rtc` 重新响铃**。
+### 3.2 双域版本控制、轮次去重与 `active` 范围对账规则
+1. **双域版本号隔离**：
+   - 客户端按 `callId` 分别维护 **`personalStateVersion`** 与 **`bannerStateVersion`**。`call.room_updated@rtc` 只推进 `bannerStateVersion`，绝不推进 `personalStateVersion`。
+   - 同域内：`incoming.stateVersion < domainLastVersion` 丢弃；`==` 按 `(callId, command, stateVersion, inviteRound)` 去重。
+2. **按邀请轮次 `(callId, inviteRound)` 抑制响铃（支持 `inviteMore` 再次邀请）**：
+   - 客户端维护已处理的邀请轮次集合 `dismissedInviteKeys`（元素格式 `${callId}:${inviteRound}`），**不再按 `callId` 永久抑制所有后续来电**；
+   - 当本机对某轮来电执行过接听/拒绝/收到 `handled` 停铃/结束时，记录 `${callId}:${inviteRound}`；该轮次迟到或重发的 `call.invited@rtc` 永不再响；
+   - 若群通话主持人通过 `inviteMore` 对该成员发起新一轮邀请（`inviteRound` 递增为 `2`、`3`...），属于新的 `${callId}:${inviteRound}`，正常弹出振铃。
+3. **`GET /api/chat/call/active` 查询范围收敛 + 请求序号淘汰 + `localStateEpoch` 防误杀**：
+   - **查询范围（`scopeKey`）严格收敛**：
+     - 每次请求按 `(accountId, scopeKey)` 归档，其中 `scopeKey = 'global'`（未传 `sessionId`）或 `scopeKey = 'session:' + sessionId`（明确传入了 `sessionId`）；
+     - **未传 `sessionId` 的账号级查询（`'global'`）只对账 `incomingCalls` 与 `currentCall`，严禁清理任何本地 `sessionGroupCall` 横幅！**
+     - **仅当请求明确携带 `sessionId = X`** 时，才允许依据该响应对群 `X` 的横幅执行核对与消失清理。
+   - **同范围请求乱序淘汰（防旧非空响应覆盖新空快照）**：
+     - 对每个 `(accountId, scopeKey)` 维护单调递增序号 `lastIssuedSeq` 与 `lastAppliedSeq`；
+     - 发起请求时分配 `reqSeq = ++lastIssuedSeq` 并记录发起水位 `queryStartEpoch = localStateEpoch`；
+     - 响应返回时，**若 `reqSeq < lastIssuedSeq`（说明客户端已针对同一 `(accountId, scopeKey)` 发出了更新一轮请求）或 `reqSeq <= lastAppliedSeq`，直接丢弃整份旧响应**；仅当 `reqSeq == lastIssuedSeq` 时置 `lastAppliedSeq = reqSeq` 并应用。
+   - **本地变更水位防误杀**：
+     - 客户端每次处理 `call.*@rtc` 或本地操作时 `localStateEpoch++` 并写入对应对象的 `updatedAtEpoch`；
+     - 对账清理时，**仅允许清理满足 `item.updatedAtEpoch <= queryStartEpoch` 的本地对象**（来电、当前通话与当前查询群的横幅三者统一遵循）。
 
 ### 3.3 冻结信令 Payload Schema（`CallSignalPayload`）
 ```json
@@ -172,6 +186,7 @@
   "mediaType": 2,
   "state": 1,
   "roomEpoch": 1,
+  "inviteRound": 1,
   "initiatorUnitId": "3a123456-0000-0000-0000-000000000001",
   "initiatorName": "张三",
   "initiatorAvatar": "https://...",
@@ -189,111 +204,203 @@
 
 ---
 
-## 4. HTTP REST API 契约与统一错误码（`CallAppService`）
+## 4. HTTP REST API 完整契约与并发裁决规则（`CallAppService`）
 
 ### 4.1 统一错误码
 | 错误码 | HTTP | 触发场景 |
 | --- | --- | --- |
-| `Call:DeviceNotAuthorized` | `403` | 缺失有效 `device_id`/`device_session` Claim、设备会话已撤销或 `DeviceSessionId` 不匹配 |
+| `Call:DeviceNotAuthorized` | `403` | 缺失有效 `device_id`/`device_session` Claim、设备会话撤销或 `DeviceSessionId` 不匹配 |
 | `Call:NotSessionMember` | `403` | 非目标会话成员、已被移出群、被禁言或拉黑 |
-| `Call:AlreadyBusy` | `409` | 触发 `UX_Chat_CallParticipant_ActiveOwner` 或校验对端占线 |
+| `Call:AlreadyBusy` | `409` | 触发 `UX_Chat_CallParticipant_ActiveOwner` 或对端占线 |
 | `Call:GroupCallAlreadyActive` | `409` | 触发 `UX_Chat_CallRecord_ActiveGroupSession`（`data.callId` 返回活跃通话 ID） |
-| `Call:RoomFull` | `409` | 群通话活跃人数达到上限 `MaxGroupParticipants`（默认 `16`） |
+| `Call:RoomFull` | `409` | 当前 `IsActiveBusy == 1` 占用名额达到上限 `16` |
 | `Call:AlreadyHandled` | `409` | 1v1 已被他端处理，或群 `accept` 条件更新 `WHERE Status = Invited` 影响行数为 `0` |
 | `Call:CallEnded` | `410` | 通话已进入终态 `Ended` |
+| `Call:RoomNotReady` | `409` | 当前 `RoomEpoch` 的 `CallRoomLifecycle.ActionState` 尚未达到 `Active` |
 | `Call:InvalidStateTransition` | `409` | 非法状态跃迁或参与者当前状态不允许操作 |
 | `Call:RoomCreateFailed` | `502` | LiveKit 显式 `CreateRoom` 失败 |
 
-### 4.2 端点详细契约
+### 4.2 写操作与查询完整 Request / Response Schema
 
-1. **`POST /api/chat/call/invite`**（需传 `requestId`）
-   - 发起 1v1、新建群通话，或对已有 `callId` 群通话追加邀请（`inviteMore`）。
-   - **SQL 并发控制**：事务内写入 `CallRecord`（触发群单活唯一索引）、写入主叫与被叫 `CallParticipant`（`IsActiveBusy = 1`，触发 `OwnerId` 占线唯一索引）、校验群人数上限 `<= MaxGroupParticipants`、插入 `CallRoomLifecycle(Epoch=1, State=Creating)`；提交后显式调 LiveKit `CreateRoom(roomName, emptyTimeout: 30, maxParticipants)`（`auto_create: false`），成功则更新 `CallRoomLifecycle(Active, RoomSid)`，失败则立即补偿关闭并回退。
-   - **幂等重放规则**：命中 `CallIdempotencyRecord` 后，**不返回缓存旧 Token**；重新校验当前设备会话、`DeviceId/DeviceSessionId` 匹配与房间当前 `RoomEpoch`，校验通过后用当前 `RoomName` 现场签发新 180s Token。
+#### (1) `POST /api/chat/call/invite`
+- **请求体（`CallInviteInput`）**：
+  ```json
+  {
+    "requestId": "019372a8-0000-7000-8000-000000000001",
+    "sessionId": "3a120000-0000-0000-0000-000000000099",
+    "senderSessionUnitId": "3a123456-0000-0000-0000-000000000001",
+    "callMode": 2,
+    "mediaType": 2,
+    "targetSessionUnitIds": ["3a123456-0000-0000-0000-000000000002"],
+    "callId": null
+  }
+  ```
+  - **分支 A：首次发起（`callId == null`）**
+    1. 幂等查 `CallIdempotencyRecord`；
+    2. 校验 `senderSessionUnitId` 归属、会话权限及目标成员有效性（`Direct` 限 1 人；`Group` 含主叫总计 `<= 16` 人）；
+    3. 事务内插入 `CallRecord`（`State = Ringing`、`RoomEpoch = 1`、固定 24 字符 `SummaryClientMessageId`、`BannerNotifyState = Group ? Pending : None`）、插入主叫（`Status = Accepted`、`InviteRound = 0`、`InviteNotifyState = None`、`ConnectExpireAt = Now + 20s`、`IsActiveBusy = 1`）与被叫（`Status = Invited`、`InviteRound = 1`、`InviteNotifyState = Pending`、`RingExpireAt = Now + 45s`、`IsActiveBusy = 1`）参与者行、插入 `CallRoomLifecycle(Epoch=1, ActionState=Creating, CreateDeadlineAt=Now+15s)`；
+    4. 事务提交后调 LiveKit `CreateRoom(roomName, emptyTimeout: 30, maxParticipants)`：
+       - **成功时**：加行锁检查 `CallRecord` 仍为 `State != Ended && RoomEpoch == 1`，置 `ActionState = Active` 并记录 `LiveKitRoomSid`，**随后调用统一的持久化投递方法 `DispatchPendingInvitesAndBannerAsync(callId)`**（投递 `InviteNotifyState == Pending` 的 `call.invited@rtc` 与 `BannerNotifyState == Pending` 的 `call.room_updated@rtc`，并将标记更新为 `Dispatched`），签发 180s Token 返回；**若建房返回时通话已 `Ended` 或换代，立即置 `Closing(LateCreateCleanup)` 并调用 `DeleteRoom`，不发放凭证**；
+       - **失败时**：置 `ActionState = CreateFailed`，执行统一整场终结事务释放全体占线并抛 `Call:RoomCreateFailed (502)`。
+  - **分支 B：群通话追加邀请（`callId != null`，即 `inviteMore`）**
+    1. 仅允许 `callMode == 2 (Group)`，且调用方必须处于本场通话的 `Connected / Connecting / Accepted` 绑定设备；
+    2. 事务内对 `CallRecord(Id = callId)` 加 `UPDLOCK, ROWLOCK`：
+       - 校验 `State != Ended` 且当前代 `CallRoomLifecycle.ActionState == Active`；
+       - 对每个目标成员：若已是活跃态（`IsActiveBusy == 1`）则跳过；若无行或曾处于 `Rejected/Timeout/Left`（且未触发跨通话占线约束），校验新增人数后总占用 `<= 16`（超限抛 `Call:RoomFull`），写入/激活为 `Status = Invited`、`IsActiveBusy = 1`、**`InviteRound = (existing?.InviteRound ?? 0) + 1`**、**`InviteNotifyState = Pending`**、`RingExpireAt = Now + 45s`；置 `CallRecord.BannerNotifyState = Pending`、`StateVersion++`；
+    3. 提交后直接调用 **`DispatchPendingInvitesAndBannerAsync(callId)`** 仅对 `InviteNotifyState == Pending` 目标推送带新 `inviteRound` 的 `call.invited@rtc` 与全群 `call.room_updated@rtc`，并返回当前房间的 `CallJoinResultDto`。
 
-2. **`POST /api/chat/call/accept`**（需传 `requestId`）
-   - **SQL 原子条件更新（防第二台设备覆盖首次绑定）**：
-     - `Direct` 模式：条件更新 `CallRecord`（`State == Ringing` → `Connecting`, `ConnectExpireAt = Now + 20s`, `StateVersion++`）**且**条件更新 `CallParticipant`（`WHERE CallId = @callId AND SessionUnitId = @unitId AND Status = Invited`，置为 `Accepted` 并绑定 `(DeviceId, DeviceSessionId)`）。任一更新影响行数为 `0`，立即抛 `Call:AlreadyHandled (409)`。
-     - `Group` 模式：校验 `CallRecord.State != Ended` 与当前容量未超限后，**仅条件更新** `CallParticipant WHERE CallId = @callId AND SessionUnitId = @unitId AND Status = Invited`（置为 `Accepted` 并绑定 `(DeviceId, DeviceSessionId)`，`ConnectExpireAt = Now + 20s`）。若已被同账号另一设备抢先接听，影响行数为 `0`，直接返回 `Call:AlreadyHandled (409)`，**绝不覆盖首次接听的设备绑定**。
-   - **幂等重放**：同 `(SessionUnitId, DeviceId, 'accept', requestId)` 重放时，重新校验 `DeviceSessionId`、成员资格与 `CallRecord.State != Ended` 后，基于当前 `RoomEpoch` 重签发新 Token；若期间该通话已结束或设备已失效，返回对应错误码。
+#### (2) `POST /api/chat/call/accept`
+- **请求体**：`{ "requestId": "string", "callId": "guid", "sessionUnitId": "guid", "inviteRound": 1 }`
+- **SQL 串行条件裁决**：
+  - 事务内对 `CallRecord` 加 `UPDLOCK, ROWLOCK`：校验 `State != Ended` 与当前代 `ActionState == Active`；
+  - **严格绑定邀请轮次与有效期**：`CallParticipant` 条件更新必须同时满足 `WHERE CallId = @c AND SessionUnitId = @u AND Status = Invited AND InviteRound = @inviteRound AND (RingExpireAt IS NULL OR RingExpireAt > @utcNow)`（1v1 同步核对 `CallRecord.RingExpireAt > @utcNow`）。第 1 轮迟到请求在第 2 轮发出后到达时，因轮次不匹配影响行数为 `0`，抛 `Call:AlreadyHandled (409)`，第 2 轮仍维持 `Invited` 可正常接听。
+  - `Direct`：同时条件更新 `CallRecord(Ringing -> Connecting, StateVersion++)` 与上述 `CallParticipant` 条件（置为 `Accepted`、绑定 `(DeviceId, DeviceSessionId)`、写入 `ConnectExpireAt = Now + 20s`）；任一影响行数 `0` 抛 `Call:AlreadyHandled (409)`。
+  - `Group`：按上述 `CallParticipant` 条件更新为 `Accepted`、绑定 `(DeviceId, DeviceSessionId)`、写入个人 `ConnectExpireAt = Now + 20s`、`CallRecord.StateVersion++`。影响行数为 `0` 抛 `Call:AlreadyHandled (409)`。
+  - 幂等重放时重新校验资格（含 `InviteRound` 未被新一轮覆盖）与 `ActionState == Active` 后现场重签新 180s Token。
 
-3. **`POST /api/chat/call/join`**（需传 `requestId`）
-   - 群聊成员点击横幅加入活跃群通话（`CallMode == Group && State != Ended`）：
-     - 校验当前群成员资格与当前活跃容量 `< MaxGroupParticipants`；
-     - 若该成员已有 `CallParticipant` 行且 `Status IN (Rejected, Timeout, Left)`，通过条件更新将其重新激活（`Status = Accepted`, `IsActiveBusy = 1`, 绑定当前 `DeviceId/DeviceSessionId`）；若无记录则插入新行（受 `UX_Chat_CallParticipant_ActiveOwner` 约束）；若已在其它活跃状态且为不同设备，抛 `Call:AlreadyBusy (409)`。
+#### (3) `POST /api/chat/call/join`
+- **请求体**：`{ "requestId": "string", "callId": "guid", "sessionUnitId": "guid" }`
+- 事务内对 `CallRecord` 加 `UPDLOCK, ROWLOCK`：校验 `Group`、`State != Ended`、`ActionState == Active`、群成员资格、容量 `< 16`；若已有 `Rejected/Timeout/Left` 行则激活置 `Accepted`、`IsActiveBusy = 1`、绑定 `(DeviceId, DeviceSessionId)` 与个人 `ConnectExpireAt = Now + 20s`；无行则插入；若已在活跃态且为他端设备则抛 `Call:AlreadyBusy (409)`。
 
-4. **`POST /api/chat/call/reject` / `cancel` / `hangup`**（需传 `requestId`）
-   - `hangup` 为主动挂断：条件更新 `Status = Left, IsActiveBusy = 0`；1v1 直接进入 `Ended(Normal)` 并在同事务登记 `CallRoomLifecycle.ActionState = Closing` 与 `SummaryDispatchStatus = Pending`；群聊若在房与待接（`Invited/Accepted/Connecting/Connected/Reconnecting`）人数归零则同步进入 `Ended(Normal)` 登记关房。
+#### (4) `POST /api/chat/call/reject` / `cancel` / `hangup`
+- **`reject` 请求体**：`{ "requestId": "string", "callId": "guid", "sessionUnitId": "guid", "inviteRound": 1, "reason": "optional" }`
+  - 条件更新同样严格校验 `WHERE CallId = @c AND SessionUnitId = @u AND Status = Invited AND InviteRound = @inviteRound AND (RingExpireAt IS NULL OR RingExpireAt > @utcNow)`，防止第 1 轮迟到拒接误拒第 2 轮新邀请（影响行数 `0` 抛 `Call:AlreadyHandled (409)`）。
+- **`cancel` / `hangup` 请求体**：`{ "requestId": "string", "callId": "guid", "sessionUnitId": "guid", "reason": "optional" }`
+- **统一终结事务铁律（`SettleCallEndedInTransaction`）**：
+  - 事务内加 `UPDLOCK, ROWLOCK`，只要导致整场通话结束，**同事务批量将 `CallId` 下所有 `IsActiveBusy == 1` 参与者置为终态并统一释放 `IsActiveBusy = 0`**，置 `CallRecord.State = Ended`、`SummaryDispatchStatus = Pending`，并将活跃/建房中 `CallRoomLifecycle` 置 `Closing`。
 
-5. **`POST /api/chat/call/heartbeat`**
-   - 客户端通话中每 30s 上报：校验 `CallParticipant.DeviceId == currentDeviceId && CallParticipant.DeviceSessionId == currentDeviceSessionId && Status IN (Connecting, Connected, Reconnecting)`，更新 `LastHeartbeatAt` 与 `CallRecord.LastActiveAt`。
+#### (5) `POST /api/chat/call/heartbeat` & `POST /api/chat/call/refresh-token`
+- **请求体**：`{ "callId": "guid", "sessionUnitId": "guid" }`
+- **`heartbeat` 响应 Schema**：
+  ```json
+  {
+    "serverTime": 1795836030000,
+    "stateVersion": "4",
+    "roomEpoch": 2,
+    "state": 3
+  }
+  ```
+  - 若客户端检测到响应中的 `roomEpoch > localRoomEpoch`（即使此前丢失了 `call.room_rotated@rtc`），**立即主动调用 `refresh-token` 并切至新代房间**；若 `state == 4 (Ended)` 立即结束通话。
+- **`refresh-token`**：满足令牌/设备会话有效、群成员有效、`State != Ended`、当前代 `ActionState == Active`、`Status IN (Accepted, Connecting, Connected, Reconnecting)`、且 **`DeviceId == currentDeviceId && DeviceSessionId == currentDeviceSessionId`** 时返回当前代 `CallJoinResultDto`。
 
-6. **`POST /api/chat/call/refresh-token`**
-   - **五重资格校验**：
-     1. 令牌未撤销 & 设备会话有效；
-     2. 仍为 `SessionId` 有效成员；
-     3. `CallRecord.State != Ended`；
-     4. `CallParticipant.Status IN (Accepted, Connecting, Connected, Reconnecting)`；
-     5. **`CallParticipant.DeviceId == currentDeviceId && CallParticipant.DeviceSessionId == currentDeviceSessionId`**（两者必须同时严格匹配）。
-   - 校验通过后基于当前 `CallRecord.RoomName`（当前 `RoomEpoch`）签发新 180s Token。
+#### (6) `GET /api/chat/call/active`（可选 `?sessionId=guid`）
+- 传 `sessionId` 时校验当前用户为该会话有效成员，否则 `403 Call:NotSessionMember`。
+- **完整响应 Schema（`ActiveCallSnapshotDto`）**：
+  ```json
+  {
+    "serverTime": 1795836000000,
+    "incomingCalls": [
+      {
+        "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
+        "sessionId": "3a120000-0000-0000-0000-000000000099",
+        "stateVersion": "1",
+        "inviteRound": 1,
+        "callMode": 1,
+        "mediaType": 2,
+        "state": 1,
+        "initiatorUnitId": "3a123456-0000-0000-0000-000000000001",
+        "initiatorName": "张三",
+        "initiatorAvatar": "https://...",
+        "mySessionUnitId": "3a123456-0000-0000-0000-000000000002",
+        "expireAt": 1795836045000
+      }
+    ],
+    "currentCall": {
+      "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
+      "sessionId": "3a120000-0000-0000-0000-000000000099",
+      "stateVersion": "4",
+      "callMode": 2,
+      "mediaType": 2,
+      "state": 3,
+      "roomEpoch": 1,
+      "mySessionUnitId": "3a123456-0000-0000-0000-000000000002",
+      "boundDeviceId": "win-device-01",
+      "activeCount": 3
+    },
+    "sessionGroupCall": {
+      "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
+      "sessionId": "3a120000-0000-0000-0000-000000000099",
+      "stateVersion": "4",
+      "mediaType": 2,
+      "activeCount": 3,
+      "initiatorName": "张三",
+      "participantPreviews": [
+        { "sessionUnitId": "3a123456-0000-0000-0000-000000000001", "displayName": "张三", "avatar": "https://..." }
+      ]
+    }
+  }
+  ```
+- **空值语义**：`incomingCalls` 无来电为空数组 `[]`；`currentCall` 无正在参与通话为 `null`；`sessionGroupCall` 在未传 `sessionId` 或目标群无活跃通话时为 `null`（客户端须遵守第 3.2 节范围对账规则，未传 `sessionId` 禁止清理群横幅）。
 
-7. **`GET /api/chat/call/active`**（可选 `?sessionId=...`）
-   - 传 `sessionId` 时必须校验当前用户持有有效 `SessionUnit`，否则 `403 Call:NotSessionMember`。
-   - 返回 `ActiveCallSnapshotDto`（含 `serverTime`、`incomingCalls`、`currentCall`、`sessionGroupCall`，均携带各自域的 `stateVersion` 且不含任何 `token`）。
-   - **客户端对账清理硬规则**：
-     - 本地处于响铃态但不在 `incomingCalls`（且入铃早于 `serverTime` 安全窗口）→ 立即停铃清理；
-     - 本地处于通话中但不在 `currentCall`（或 `currentCall.boundDeviceId != 本机 deviceId`）→ 立即断开本地 LiveKit 连接并退出通话 UI；
-     - 当前群聊页展示着横幅但 `sessionGroupCall == null` 或 `callId` 变更 → 立即收起/替换横幅。
-
-8. **`CallJoinResultDto`（`invite` / `accept` / `join` / `refresh-token` 共用响应）**
-   ```json
-   {
-     "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
-     "sessionId": "guid",
-     "stateVersion": "2",
-     "callMode": 1,
-     "mediaType": 2,
-     "roomName": "gotoim_call_019372a81b2c7d3e8f4a5b6c7d8e9f00_v1",
-     "roomEpoch": 1,
-     "rtcUrl": "ws://10.0.5.20:7880",
-     "token": "<LiveKit JWT TTL=180s>",
-     "iceTransportPolicy": "all",
-     "expireAt": 1795836045000
-   }
-   ```
-   > **唯一 TURN 来源约定**：响应中**不再由 Chat 拼装 `iceServers`**；LiveKit Server 在连接握手时自动下发由其内置 TURN 生成的 STUN/TURN 列表与动态凭据，客户端 SDK 自动使用，Chat 仅通过 `iceTransportPolicy` 控制是否强制 `relay`。  
-   > **URL 约定**：`rtcUrl` 仅传基础基址（如 `ws://10.0.5.20:7880` 或经 Caddy 时 `ws://10.0.5.20:8044` / `wss://域名`），**不带 `/rtc`**（JS/Dart SDK 自动追加）。
+#### (7) `CallJoinResultDto`（`invite` / `accept` / `join` / `refresh-token` 响应）
+```json
+{
+  "callId": "019372a8-1b2c-7d3e-8f4a-5b6c7d8e9f00",
+  "sessionId": "3a120000-0000-0000-0000-000000000099",
+  "stateVersion": "2",
+  "callMode": 1,
+  "mediaType": 2,
+  "roomName": "gotoim_call_019372a81b2c7d3e8f4a5b6c7d8e9f00_v1",
+  "roomEpoch": 1,
+  "rtcUrl": "ws://10.0.5.20:7880",
+  "token": "<LiveKit JWT TTL=180s>",
+  "iceTransportPolicy": "all",
+  "expireAt": 1795836045000
+}
+```
+> `iceServers` 由 LiveKit 内置 TURN 握手自动下发；`rtcUrl` 仅传基础基址（不带 `/rtc`）。
 
 ---
 
-## 5. 房间闭环、断线恢复、安全撤销与 Worker 补偿
+## 5. 房间生命周期、统一入房转换与 Worker 补偿闭环
 
-### 5.1 LiveKit Webhook 处理（`POST /api/chat/call/livekit-webhook`）
-1. 验证 LiveKit Webhook JWT 与 Body SHA-256 哈希；
-2. 插入 `CallWebhookEvent(EventId)` 去重；
-3. 严格比对 `event.room.name == callRecord.RoomName && event.room.sid == callRecord.LiveKitRoomSid`（不匹配旧代/异房直接忽略）；
-4. 事件处理：
-   - `participant_joined`：解析 Metadata `sessionUnitId`、`deviceId`，校验该参与者仍合法后置 `Status = Connected`、`LiveKitParticipantSid = participant.sid`、清空 `DisconnectDeadlineAt`。
-     - **1v1 计时规则**：仅当 1v1 双方均达到 `Connected`（`Count == 2`）时，`CallRecord.State` 才从 `Connecting` 迁移为 `Connected` 并首次写入 `ConnectedAt`；
-     - **群组计时规则**：首位被叫达到 `Connected` 时 `CallRecord` 进入 `Connected` 并写入 `ConnectedAt`。
-   - `participant_left`：校验 `LiveKitParticipantSid` 匹配且当前仍为 `Connected`（未主动 `hangup`）：
-     - 迁移为 `Reconnecting`，设置 `DisconnectDeadlineAt = Now + 20s`、`CallRecord.NextCheckAt = Min(NextCheckAt, DisconnectDeadlineAt)`。
-   - `room_finished`：仅当确认房间已不存在且无可重连者时进入终态结算。
+### 5.1 统一入房转换方法（`TryMarkParticipantConnectedAsync`）
+**Webhook（`participant_joined`）与 `CallCompensationWorker`（巡检发现已在房）共用同一条领域方法**，在 `CallRecord` 行锁事务内执行：
+1. 校验 `CallRecord.State != Ended`、`CallRecord.RoomEpoch == roomEpoch && CallRecord.LiveKitRoomSid == roomSid`；
+2. 校验 `CallParticipant` 存在且 `Status IN (Accepted, Connecting, Connected, Reconnecting)`（禁止复活 `Rejected/Timeout/Left/Revoked`）；
+3. 校验 `CallParticipant.DeviceId == matchedDeviceId`；
+4. 满足后更新：`Status = Connected`、`IsActiveBusy = 1`、`LiveKitParticipantSid = participantSid`、清空 `ConnectExpireAt` 与 `DisconnectDeadlineAt`、更新 `MaxParticipants`；
+5. **计时起点推进**：
+   - `Direct`：当且仅当 **双方均已达 `Connected`（`Count == 2`）** 时，迁移 `CallRecord.State = Connected` 并首次写入 `ConnectedAt`；
+   - `Group`：首位被叫达 `Connected` 时迁移 `CallRecord.State = Connected` 并写入 `ConnectedAt`。
 
-### 5.2 `CallCompensationWorker`（5s 周期，结合 LiveKit `ListRooms` / `ListParticipants`）
-由于 LiveKit 不保证 Webhook 100% 送达，Worker 按 SQL 持久化截止时间做最终裁决（统一使用 LiveKit RoomService 官方接口 **`ListRooms(names)`** 与 **`ListParticipants(roomName)`**）：
-1. **振铃 / 建连超时**：超过 `RingExpireAt` 或 `ConnectExpireAt` 未连接 → 调 `ListParticipants` 核实未在房 → 置 `Timeout`；1v1 或群无人待接则进入 `Ended`（1v1 未达双方 `Connected` 则 `DurationSeconds = 0`）。
-2. **1v1 断线超时强终结规则**：在 1v1 通话中，**只要任一方** `Status == Reconnecting` 超过 `DisconnectDeadlineAt`（且 `ListParticipants` 确认该方不在房内），**无论另一方是否仍在持续上报 `heartbeat`**，立即将整场 1v1 通话终结为 `Ended(NetworkError)`，向另一方广播 `call.ended@rtc` 并登记关房！
-3. **心跳失联兜底**：`Connected` 参与者超过 90s 无 `heartbeat` 且 `ListParticipants` / `ListRooms([roomName])` 确认已不在房或房间已销毁，按离开处理并触发终态检测。
-4. **每代房间关闭闭环（`CallRoomLifecycle`）**：扫描 `ActionState == Closing && NextRetryAt <= UtcNow`，调用 `DeleteRoom(roomName)`，成功或返回 `NotFound` 时置 `ActionState = Closed, ClosedAt = UtcNow`；失败则退避重试直至确认关闭。
-5. **摘要消息 Outbox 补偿**：扫描 `State == Ended && SummaryDispatchStatus == Pending`，使用 `SummaryClientMessageId` 幂等落库 `MessageTypes.Call = 20` 并回写 `SummaryMessageId` 与 `Completed`。
+### 5.2 LiveKit Webhook 处理（`POST /api/chat/call/livekit-webhook`）
+1. 验证 JWT + Body SHA-256，插入 `CallWebhookEvent(EventId)` 去重；
+2. 比对 `event.room.name == callRecord.RoomName && event.room.sid == callRecord.LiveKitRoomSid`，不匹配忽略；
+3. `participant_joined` → 调用 `TryMarkParticipantConnectedAsync(...)`；
+4. `participant_left` → SID 匹配且当前 `Status == Connected` 时转 `Reconnecting`、`DisconnectDeadlineAt = Now + 20s`；
+5. `room_finished` → 无待接/重连中成员时执行 `SettleCallEndedInTransaction`。
 
-### 5.3 安全强制踢出与房间轮换闭环
-触发条件：群成员被移出/退群、或设备会话被撤销/注销（`TokenRevokedEto` / 设备踢出）：
-1. 在 SQL 事务中将目标 `CallParticipant` 置为 `Revoked`（`IsActiveBusy = 0`），**拒绝其后续一切 `refresh-token`/`join`**；
-2. 若为 **1v1**：立即将 `CallRecord` 置为 `Ended(Revoked)`，登记当前 `CallRoomLifecycle` 为 `Closing` 并销毁房间；
-3. 若为 **群通话**：执行 **房间轮换**：
-   - 将当前代 `CallRoomLifecycle(RoomEpoch)` 置为 **`Closing`**；
-   - `RoomEpoch++` 并生成新 `RoomName`，插入新代 `CallRoomLifecycle(RoomEpoch, Creating)`，显式调用 `CreateRoom` 获取新 `LiveKitRoomSid` 更新为 `Active`；
-   - 调用 `RemoveParticipant(oldRoomName, targetIdentity)` 并立即调用 `DeleteRoom(oldRoomName)`，确认关闭后将旧代 `CallRoomLifecycle` 置为 `Closed`（若关旧房失败，由 `CallCompensationWorker` 持续重试直到确认旧房关闭——**旧房未 `Closed` 前不标记该次撤销闭环完成**）；
-   - 向其余合法在房设备推送 `call.room_rotated@rtc`（携带新 `stateVersion`），合法设备静默调用 `refresh-token` 领取新房 Token 并迁入新房间。
+### 5.3 `CallCompensationWorker`（5s 周期，官方 API `ListRooms` + `ListParticipants`）
+1. **建房恢复（`ActionState == Creating && CreateDeadlineAt <= UtcNow`）**：
+   - 调 `ListRooms([roomName])`：
+     - 房间已存在：若 `CallRecord.State != Ended && CallRecord.RoomEpoch == lifecycle.RoomEpoch`，回填 `LiveKitRoomSid` 并置 `Active` → **立即调用 `DispatchPendingInvitesAndBannerAsync(callId)` 补发未投递的 `call.invited@rtc` / `call.room_updated@rtc`（若为轮换新房且 `RotationNotifyState == Pending`，同步补发 `call.room_rotated@rtc`）**；若已 `Ended` 或已换代，转 `Closing(LateCreateCleanup)`。
+     - 房间不存在：第 1 代建房超时置 `CreateFailed` 并调用 `SettleCallEndedInTransaction(NetworkError)`；轮换新代失败终止通话并关闭旧房。
+2. **首次邀请 / 横幅漏发补发**：扫描 `State != Ended` 且当前代 `ActionState == Active` 下仍存在 `CallParticipant.InviteNotifyState == Pending`（未超 `RingExpireAt`）或 `CallRecord.BannerNotifyState == Pending` 的记录，调用 `DispatchPendingInvitesAndBannerAsync(callId)`。
+3. **建连检查与防漏计时（`Accepted/Connecting` 超 `ConnectExpireAt`）**：
+   - 调 `ListParticipants(roomName)` 核实该参与者状态：
+     - **媒体就绪硬条件**：仅当匹配参与者的 LiveKit **`ParticipantInfo.State == ACTIVE`**（严格排除仍处于信令握手/未通媒体的 `JOINING` 与 `JOINED`）时，说明 `participant_joined` Webhook 丢失但媒体实际已就绪：**立即调用 `TryMarkParticipantConnectedAsync(...)` 补记为 `Connected` 并推进计时**！
+     - **若不在房或仍为 `JOINING / JOINED`（信令已连但媒体未通且已超 `ConnectExpireAt`）**：不得提前计时，1v1 立即执行 `SettleCallEndedInTransaction(NetworkError)`（`DurationSeconds = 0`）；群通话置 `Timeout`(`IsActiveBusy = 0`)。
+4. **断线宽限到期（`Reconnecting` 超 `DisconnectDeadlineAt`）**：
+   - 调 `ListParticipants(roomName)` 核实：仅当匹配参与者 **`ParticipantInfo.State == ACTIVE`** 时视为已重连成功 → 调用 `TryMarkParticipantConnectedAsync(...)` 恢复；若不在房或仅 `JOINING / JOINED` → **1v1 只要任一方超窗（即使另一方持续心跳）立即 `SettleCallEndedInTransaction(NetworkError)`**；群通话置 `Left`(`IsActiveBusy = 0`)，人数归零则结算。
+5. **心跳失联与振铃超时**：`Invited` 超 `RingExpireAt` 置 `Timeout`（1v1 整场结束）；`Connected` 超 90s 无心跳且 `ListParticipants` 不在房按离开处理。
+6. **关房重试（`ActionState == Closing`）**：退避调用 `DeleteRoom(roomName)` 至成功或 `NotFound` 后置 `Closed`。
+7. **换房通知补偿（`ActionState == Active && RotationNotifyState == Pending`）**：补发 `call.room_rotated@rtc` 置 `Dispatched`。
+8. **摘要消息 Outbox 补偿（`State == Ended && SummaryDispatchStatus == Pending`）**：以 24 字符 `SummaryClientMessageId` 幂等落库 `MessageTypes.Call = 20`。
+
+### 5.4 安全强制踢出、房间轮换与客户端被动对账兜底
+1. **服务端**：群成员移出或设备会话撤销时，置目标 `Revoked`（`IsActiveBusy = 0`）；1v1 结算终结；群通话旧代置 `Closing`、`RoomEpoch++` 建新房并置 `Active` + `RotationNotifyState = Pending`，投递 `call.room_rotated@rtc` 并重试 `DeleteRoom(oldRoomName)` 直至旧代确认 `Closed`。
+2. **客户端被动兜底（防 `call.room_rotated@rtc` 丢包）**：
+   - 客户端在收到 LiveKit **`RoomDisconnected`**（非本端主动挂断）或 **`heartbeat` 响应发现 `roomEpoch > localRoomEpoch`** 时，主动发起 `GET /api/chat/call/active` 对账：若 `currentCall` 仍有效且 `boundDeviceId == 本机 deviceId`（且 `roomEpoch` 推进），立即调 `refresh-token` 领取新代 Token 切入新房间；若 `currentCall == null` 或设备不匹配，立刻清理退出。
+
+---
+
+## 6. 跨端平台支持矩阵（V1 冻结范围）
+
+| 平台 | 前台来电振铃 | 1v1 / 群组音视频 | 发起屏幕共享 | 观看屏幕共享 | 后台 / 杀进程锁屏来电 |
+| --- | --- | --- | --- | --- | --- |
+| **Electron (Windows / macOS)** | ✅ V1 必选 | ✅ V1 必选 | ✅ V1 必选（`getDisplayMedia` + `setDisplayMediaRequestHandler`） | ✅ V1 必选 | ❌ 仅桌面端运行态（托盘保活） |
+| **Flutter Windows / macOS** | ✅ V1 必选 | ✅ V1 必选 | ✅ V1 必选（桌面端屏幕/窗口选择） | ✅ V1 必选 | ❌ 仅桌面端运行态 |
+| **Flutter Android** | ✅ V1 必选 | ✅ V1 必选 | ✅ V1 必选（`MediaProjection` 前台服务） | ✅ V1 必选 | ⏳ **V1.1**（需补齐 FCM/厂商推送 + Telecom ConnectionService） |
+| **Flutter iOS** | ✅ V1 必选 | ✅ V1 必选 | ⏳ **V1.1**（需补齐 ReplayKit `BroadcastUploadExtension`） | ✅ V1 必选 | ⏳ **V1.1**（需补齐 APNs VoIP PushKit + CallKit） |
+| **Flutter Web** | ❌ 不支持 | ❌ 不支持 | ❌ 不支持 | ❌ 不支持 | ❌（`signalr_gateway_factory.dart` 当前走 `stub` 无实时长连接） |
