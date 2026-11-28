@@ -88,5 +88,64 @@ public class CallCompensationWorker : AsyncPeriodicBackgroundWorkerBase
                 }
             }
         }
+
+        // 3. 通话摘要消息派发 (SummaryDispatchStatus == 1 [Pending])
+        var pendingSummaries = await callRecordRepo.GetListAsync(
+            x => x.State == Enums.CallSessionState.Ended && x.SummaryDispatchStatus == 1);
+        if (pendingSummaries.Count > 0)
+        {
+            var sessionUnitManager = workerContext.ServiceProvider.GetRequiredService<IczpNet.Chat.SessionUnits.ISessionUnitManager>();
+            var messageManager = workerContext.ServiceProvider.GetRequiredService<IczpNet.Chat.MessageSections.Messages.IMessageManager>();
+            var existingMsgRepo = workerContext.ServiceProvider.GetRequiredService<IRepository<IczpNet.Chat.MessageSections.Messages.Message, long>>();
+
+            foreach (var call in pendingSummaries.Take(20))
+            {
+                try
+                {
+                    var existingMsg = await existingMsgRepo.FindAsync(
+                        x => x.SenderSessionUnitId == call.InitiatorUnitId && x.ClientMessageId == call.SummaryClientMessageId);
+                    long summaryMessageId;
+                    if (existingMsg != null)
+                    {
+                        summaryMessageId = existingMsg.Id;
+                    }
+                    else
+                    {
+                        var senderUnit = await sessionUnitManager.GetCacheAsync(call.InitiatorUnitId);
+                        if (senderUnit == null) continue;
+
+                        var contentObj = new CallContentInfo
+                        {
+                            CallId = call.Id,
+                            CallMode = call.CallMode,
+                            MediaType = call.MediaType,
+                            EndReason = call.EndReason ?? Enums.CallEndReason.Normal,
+                            DurationSeconds = call.DurationSeconds,
+                            HadScreenShare = call.HadScreenShare
+                        };
+                        var jsonContent = System.Text.Json.JsonSerializer.Serialize(contentObj);
+                        var msg = await messageManager.CreateMessageAsync(
+                            senderUnit,
+                            m =>
+                            {
+                                m.SetKeyValue(nameof(MessageTypes.Call), jsonContent);
+                                return Task.FromResult<IczpNet.Chat.MessageSections.IContentEntity>(null!);
+                            },
+                            clientMessageId: call.SummaryClientMessageId);
+                        summaryMessageId = msg.Id;
+                    }
+
+                    using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
+                    var target = await callRecordRepo.GetAsync(call.Id);
+                    target.SummaryMessageId = summaryMessageId;
+                    target.SummaryDispatchStatus = 2; // Completed
+                    await uow.CompleteAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "CallCompensationWorker summary dispatch failed for CallId={CallId}", call.Id);
+                }
+            }
+        }
     }
 }
